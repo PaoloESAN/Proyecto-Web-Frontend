@@ -16,15 +16,17 @@ Para el desarrollo y mantenimiento del frontend, el agente debe dominar y aplica
 1. **Vue 3 (Composition API) & Nuxt 3 (SSR/Routing)**: Creación de componentes reactivos modulares, layouts consistentes y control de rutas.
 2. **Pinia**: Gestión centralizada de estado para la sesión de usuario (tokens JWT), perfiles, alertas activas y transacciones en curso.
 3. **Nuxt UI & Tailwind CSS**: Diseño e interfaces visuales coherentes, responsivas y atractivas con soporte para estados interactivos y transiciones fluidas.
-4. **Integración de API mediante `useFetch` / `$fetch`**:
-   - **Interceptores globales**: Adjuntar automáticamente el token JWT en el header `Authorization: Bearer <token>` para todos los endpoints protegidos.
-   - **Manejo Centralizado de Códigos HTTP**:
-     - `200 OK` / `201 Created`: Procesar payload y actualizar la vista/estado de forma exitosa.
-     - `400 Bad Request`: Mostrar notificaciones de error con las validaciones de negocio provistas por el backend.
-     - `401 Unauthorized`: Limpiar el estado de Pinia, remover el token de almacenamiento local y redirigir al usuario al login.
-     - `403 Forbidden`: Restringir el acceso visual, denegar acciones y notificar la falta de permisos (ej. acceso a panel admin o transacciones ajenas).
-     - `404 Not Found`: Presentar interfaces de recurso no encontrado.
-     - `500 Internal Server Error`: Mostrar alerta de error crítico general en el sistema.
+4. **Integración de API mediante el composable personalizado `useApi`**:
+   - **Uso obligatorio**: Para consumir la API del backend, se **DEBE** utilizar el composable `useApi()` (el cual retorna la instancia `$api` preconfigurada de `$fetch` en el plugin `app/plugins/api.ts`) en lugar de hacer llamadas directas o manuales a `$fetch` o `useFetch`.
+   - **Funcionamiento y Token**: Utiliza `$fetch` por debajo e inyecta de forma automática el token JWT guardado de la cookie `auth_token` en la cabecera `Authorization: Bearer <token>` para todos los endpoints protegidos.
+   - **Tipado Estricto**: Al realizar llamadas a la API mediante `useApi()`, se **DEBEN** utilizar los tipos de TypeScript definidos en `app/types/` (importados mediante `~/types`) para tipar y mapear correctamente tanto la petición (Request) como la respuesta (Response). Ej: `api<LoginResponse>('/api/auth/login', { body: data })`.
+   - **Base URL y Configuración**: La URL base se obtiene dinámicamente de `runtimeConfig.public.apiBase` en nuxt.config.ts (mapeada a la variable de entorno `NUXT_PUBLIC_API_BASE` del archivo `.env`).
+   - **Interceptores globales (ya implementados)**:
+     - Adjunta automáticamente el token JWT obtenido de la cookie `auth_token` en la cabecera `Authorization: Bearer <token>`.
+     - Realiza el **Manejo Centralizado de Códigos HTTP**:
+       - `401 Unauthorized`: Limpia la sesión en `useAuthStore()`, elimina la cookie del token y redirige al usuario a `/login`.
+       - `403 Forbidden`: Muestra un Toast visual de error indicando la falta de permisos.
+       - `500 Internal Server Error`: Muestra un Toast visual notificando el error crítico general en el sistema.
 5. **Comunicación en Tiempo Real (SignalR)**:
    - Conexión al hub en `/api/chat` usando `@microsoft/signalr`.
    - Método `JoinRoom(transaccionId)` al entrar a la vista de transacción.
@@ -33,6 +35,9 @@ Para el desarrollo y mantenimiento del frontend, el agente debe dominar y aplica
 6. **Manejo de Formularios Multipart (FormData)**:
    - Subida de archivos binarios para KYC (`verify-identity`) y vouchers de transacciones (`voucher`). Las imágenes deben validarse en frontend para ser JPG/PNG y pesar menos de 5MB.
 7. **Uso de Skills del Agente (`.agents/...`)**: Es mandatario utilizar y apoyarse en las "skills" y scripts predefinidos (como `nuxt`, `nuxtui` y `frontend design`) en la carpeta `.agents/` ubicada en la raíz del proyecto Frontend.
+8. **Validación de Formularios con Zod (Simple)**:
+   - Se **DEBE** usar `zod` para validar formularios en el lado del cliente (conectado a `<UForm>` de Nuxt UI).
+   - Se debe mantener la validación sencilla y directa (evitando reglas complejas innecesarias), manteniéndola lo más básica posible con mensajes claros en español.
 
 ---
 
