@@ -38,6 +38,8 @@ Para el desarrollo y mantenimiento del frontend, el agente debe dominar y aplica
 8. **Validación de Formularios con Zod (Simple)**:
    - Se **DEBE** usar `zod` para validar formularios en el lado del cliente (conectado a `<UForm>` de Nuxt UI).
    - Se debe mantener la validación sencilla y directa (evitando reglas complejas innecesarias), manteniéndola lo más básica posible con mensajes claros en español.
+9. **Gestor de Paquetes Obligatorio (pnpm)**:
+   - Se **DEBE** utilizar exclusivamente `pnpm` para la instalación de dependencias, ejecución de scripts de compilación (`pnpm run build`), tareas de desarrollo (`pnpm run dev`), generación de tipos (`pnpm exec nuxi prepare`), o cualquier otra tarea de CLI en el proyecto. Está estrictamente prohibido utilizar `npm`, `yarn` o `bun` para evitar inconsistencias con el archivo `pnpm-lock.yaml`.
 
 ---
 
