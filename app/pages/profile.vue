@@ -1,37 +1,24 @@
 <script setup lang="ts">
 import type { FormError, FormSubmitEvent } from '@nuxt/ui'
+import type { UserProfileResponse, MetodoPagoResponse, MetodoPagoCreateRequest, MessageResponse, UpdateProfileResponse } from '~/types'
 
 const colorMode = useColorMode()
 const toast = useToast()
+const api = useApi()
 
-interface Profile {
-  nombres: string
-  telefono: string
-  email: string
-}
-interface MetodoPago {
-  id: number
-  banco: string
-  numeroCuenta: string
-  nombreTitular: string
-  tipoMoneda: string
-}
-
-const profile = ref<Profile>({ nombres: '', telefono: '', email: '' })
-const metodosPago = ref<MetodoPago[]>([])
+const profile = ref<UserProfileResponse | null>(null)
+const metodosPago = ref<MetodoPagoResponse[]>([])
 const loadingProfile = ref(true)
 const loadingAccounts = ref(true)
 const editingProfile = ref(false)
 
-const API_BASE = 'http://localhost:5132/api'
-
 async function fetchProfile() {
   loadingProfile.value = true
   try {
-    const data = await $fetch<Profile>(`${API_BASE}/users/profile`)
+    const data = await api<UserProfileResponse>('/api/users/profile')
     profile.value = data
     profileState.nombres = data.nombres
-    profileState.telefono = data.telefono
+    profileState.telefono = data.telefono ?? ''
   } catch {
     toast.add({ title: 'Error', description: 'No se pudo cargar el perfil', color: 'error', icon: 'i-lucide-alert-circle' })
   } finally {
@@ -42,7 +29,7 @@ async function fetchProfile() {
 async function fetchMetodosPago() {
   loadingAccounts.value = true
   try {
-    const data = await $fetch<MetodoPago[]>(`${API_BASE}/users/metodos-pago`)
+    const data = await api<MetodoPagoResponse[]>('/api/users/metodos-pago')
     metodosPago.value = data
   } catch {
     toast.add({ title: 'Error', description: 'No se pudieron cargar las cuentas', color: 'error', icon: 'i-lucide-alert-circle' })
@@ -64,13 +51,15 @@ function validateProfile(state: { nombres: string; telefono: string }): FormErro
 async function onSubmitProfile(event: FormSubmitEvent<{ nombres: string; telefono: string }>) {
   savingProfile.value = true
   try {
-    await $fetch(`${API_BASE}/users/profile`, {
+    const res = await api<UpdateProfileResponse>('/api/users/profile', {
       method: 'PUT',
       body: { nombres: event.data.nombres, telefono: event.data.telefono }
     })
     toast.add({ title: 'Perfil actualizado', color: 'success', icon: 'i-lucide-circle-check' })
-    profile.value.nombres = event.data.nombres
-    profile.value.telefono = event.data.telefono
+    if (profile.value) {
+      profile.value.nombres = res.usuario.nombres
+      profile.value.telefono = res.usuario.telefono
+    }
     editingProfile.value = false
   } catch {
     toast.add({ title: 'Error', description: 'No se pudo actualizar el perfil', color: 'error', icon: 'i-lucide-alert-circle' })
@@ -81,7 +70,7 @@ async function onSubmitProfile(event: FormSubmitEvent<{ nombres: string; telefon
 
 const modalOpen = ref(false)
 const savingAccount = ref(false)
-const accountState = reactive({ banco: '', numeroCuenta: '', nombreTitular: '', tipoMoneda: 'USD' })
+const accountState = reactive<MetodoPagoCreateRequest>({ banco: '', numeroCuenta: '', nombreTitular: '', tipoMoneda: 'USD' })
 
 const monedas = [
   { label: 'USD - Dólar Estadounidense', value: 'USD' },
@@ -91,7 +80,7 @@ const monedas = [
   { label: 'PEN - Sol Peruano', value: 'PEN' },
 ]
 
-function validateAccount(state: { banco: string; numeroCuenta: string; nombreTitular: string }): FormError[] {
+function validateAccount(state: MetodoPagoCreateRequest): FormError[] {
   const errors: FormError[] = []
   if (!state.banco) errors.push({ name: 'banco', message: 'El banco es requerido' })
   if (!state.numeroCuenta) errors.push({ name: 'numeroCuenta', message: 'El número de cuenta es requerido' })
@@ -99,10 +88,10 @@ function validateAccount(state: { banco: string; numeroCuenta: string; nombreTit
   return errors
 }
 
-async function onSubmitAccount(event: FormSubmitEvent<{ banco: string; numeroCuenta: string; nombreTitular: string; tipoMoneda: string }>) {
+async function onSubmitAccount(event: FormSubmitEvent<MetodoPagoCreateRequest>) {
   savingAccount.value = true
   try {
-    await $fetch(`${API_BASE}/users/metodos-pago`, {
+    await api('/api/users/metodos-pago', {
       method: 'POST',
       body: {
         banco: event.data.banco,
@@ -127,7 +116,7 @@ async function onSubmitAccount(event: FormSubmitEvent<{ banco: string; numeroCue
 
 async function deleteAccount(id: number) {
   try {
-    await $fetch(`${API_BASE}/users/metodos-pago/${id}`, { method: 'DELETE' })
+    await api(`/api/users/metodos-pago/${id}`, { method: 'DELETE' })
     toast.add({ title: 'Cuenta eliminada', color: 'success', icon: 'i-lucide-circle-check' })
     await fetchMetodosPago()
   } catch {
@@ -141,14 +130,16 @@ onMounted(() => {
 
 function cancelEdit() {
   editingProfile.value = false
-  profileState.nombres = profile.value.nombres
-  profileState.telefono = profile.value.telefono
+  if (profile.value) {
+    profileState.nombres = profile.value.nombres
+    profileState.telefono = profile.value.telefono ?? ''
+  }
 }
 </script>
 
 <template>
   <div class="min-h-screen bg-[#f5f5f5] text-[#1a1a1a] font-sans">
-    <nav class="h-17.5 bg-white border-b border-[#d9d9d9] flex items-center justify-between px-10">
+    <nav class="h-[70px] bg-white border-b border-[#d9d9d9] flex items-center justify-between px-10">
       <div class="text-[32px] font-bold tracking-tight">FinTech Pro</div>
       <div class="flex items-center gap-10">
         <span class="text-sm font-medium text-[#8c8c8c] cursor-pointer hover:text-[#1a1a1a]">Dashboard</span>
@@ -160,18 +151,18 @@ function cancelEdit() {
 
     <main class="max-w-6xl mx-auto px-10 py-8">
       <div class="flex gap-8">
-        <div class="w-90 shrink-0 space-y-6">
+        <div class="w-[360px] shrink-0 space-y-6">
           <div class="bg-white rounded-xl border border-[#d9d9d9] p-6 flex flex-col items-center">
-            <USkeleton v-if="loadingProfile" class="w-30 h-30 rounded-full mb-4" />
-            <div v-else class="w-30 h-30 rounded-full bg-[#e8e8e8] flex items-center justify-center text-4xl font-bold text-[#8c8c8c] mb-4">
-              {{ profile.nombres ? profile.nombres.charAt(0).toUpperCase() : '?' }}
+            <USkeleton v-if="loadingProfile" class="w-[120px] h-[120px] rounded-full mb-4" />
+            <div v-else class="w-[120px] h-[120px] rounded-full bg-[#e8e8e8] flex items-center justify-center text-4xl font-bold text-[#8c8c8c] mb-4">
+              {{ profile?.nombres?.charAt(0).toUpperCase() || '?' }}
             </div>
             <USkeleton v-if="loadingProfile" class="h-6 w-40 mb-1" />
-            <h2 v-else class="text-xl font-bold text-center">{{ profile.nombres }}</h2>
+            <h2 v-else class="text-xl font-bold text-center">{{ profile?.nombres }}</h2>
             <USkeleton v-if="loadingProfile" class="h-4 w-48 mb-1" />
-            <p v-else class="text-sm text-[#8c8c8c] text-center">{{ profile.email }}</p>
+            <p v-else class="text-sm text-[#8c8c8c] text-center">{{ profile?.correo }}</p>
             <USkeleton v-if="loadingProfile" class="h-4 w-32 mb-4" />
-            <p v-else class="text-sm text-[#8c8c8c] text-center mb-4">{{ profile.telefono }}</p>
+            <p v-else class="text-sm text-[#8c8c8c] text-center mb-4">{{ profile?.telefono }}</p>
             <UButton
               label="Editar Perfil"
               color="neutral"
@@ -188,7 +179,7 @@ function cancelEdit() {
               <span class="text-sm font-medium">Verification</span>
               <span class="inline-flex items-center gap-1 text-xs font-semibold text-[#389e0d] bg-[#f6ffed] px-3 py-1 rounded-full border border-[#b7eb8f]">
                 <UIcon name="i-lucide-check" class="size-3" />
-                Verified
+                {{ profile?.esVerificado ? 'Verified' : 'Pending' }}
               </span>
             </div>
           </div>
@@ -217,12 +208,12 @@ function cancelEdit() {
           </div>
 
           <div v-if="loadingAccounts" class="grid grid-cols-2 gap-4">
-            <USkeleton v-for="i in 2" :key="i" class="h-32.5 rounded-xl" />
+            <USkeleton v-for="i in 2" :key="i" class="h-[130px] rounded-xl" />
           </div>
 
           <template v-else-if="metodosPago.length > 0">
             <div class="grid grid-cols-2 gap-4">
-              <div v-for="cuenta in metodosPago" :key="cuenta.id" class="bg-white rounded-xl border border-[#d9d9d9] p-5 h-32.5 flex flex-col justify-between relative group">
+              <div v-for="cuenta in metodosPago" :key="cuenta.metodoPagoId" class="bg-white rounded-xl border border-[#d9d9d9] p-5 h-[130px] flex flex-col justify-between relative group">
                 <div class="flex items-start justify-between">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-[#f0f0f0] flex items-center justify-center">
@@ -239,7 +230,7 @@ function cancelEdit() {
                     variant="ghost"
                     size="xs"
                     class="opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
-                    @click="deleteAccount(cuenta.id)"
+                    @click="deleteAccount(cuenta.metodoPagoId)"
                   />
                 </div>
                 <div class="flex items-center justify-between">
@@ -250,7 +241,7 @@ function cancelEdit() {
             </div>
           </template>
 
-          <div v-else class="bg-white rounded-xl border-2 border-dashed border-[#d9d9d9] p-10 flex flex-col items-center justify-center cursor-pointer hover:border-[#bbb] transition-colors min-h-40" @click="modalOpen = true">
+          <div v-else class="bg-white rounded-xl border-2 border-dashed border-[#d9d9d9] p-10 flex flex-col items-center justify-center cursor-pointer hover:border-[#bbb] transition-colors min-h-[160px]" @click="modalOpen = true">
             <div class="w-12 h-12 rounded-full bg-[#f0f0f0] flex items-center justify-center mb-3">
               <UIcon name="i-lucide-plus" class="size-6 text-[#555]" />
             </div>
