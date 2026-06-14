@@ -52,6 +52,9 @@ Para el desarrollo y mantenimiento del frontend, el agente debe dominar y aplica
 
 ## 4. Mapa de Endpoints e Interfaces TypeScript
 
+> [!IMPORTANT]
+> Todas las interfaces TypeScript descritas a continuación ya se encuentran creadas y organizadas en la carpeta `app/types/` (indexadas y exportadas mediante `app/types/index.ts`). Cualquier agente de IA o desarrollador frontend **DEBE** importar y utilizar estas interfaces (ej. `import type { LoginRequest } from '~/types'`) para asegurar la consistencia del tipado en componentes, stores y llamadas a la API (`useFetch` / `$fetch`).
+
 A continuación se especifican las interfaces TypeScript y las respuestas esperadas para cada endpoint de la API base desplegada en `http://localhost:5132`.
 
 ### Respuestas de Error Comunes

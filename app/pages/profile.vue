@@ -148,7 +148,7 @@ function cancelEdit() {
 
 <template>
   <div class="min-h-screen bg-[#f5f5f5] text-[#1a1a1a] font-sans">
-    <nav class="h-[70px] bg-white border-b border-[#d9d9d9] flex items-center justify-between px-10">
+    <nav class="h-17.5 bg-white border-b border-[#d9d9d9] flex items-center justify-between px-10">
       <div class="text-[32px] font-bold tracking-tight">FinTech Pro</div>
       <div class="flex items-center gap-10">
         <span class="text-sm font-medium text-[#8c8c8c] cursor-pointer hover:text-[#1a1a1a]">Dashboard</span>
@@ -160,10 +160,10 @@ function cancelEdit() {
 
     <main class="max-w-6xl mx-auto px-10 py-8">
       <div class="flex gap-8">
-        <div class="w-[360px] shrink-0 space-y-6">
+        <div class="w-90 shrink-0 space-y-6">
           <div class="bg-white rounded-xl border border-[#d9d9d9] p-6 flex flex-col items-center">
-            <USkeleton v-if="loadingProfile" class="w-[120px] h-[120px] rounded-full mb-4" />
-            <div v-else class="w-[120px] h-[120px] rounded-full bg-[#e8e8e8] flex items-center justify-center text-4xl font-bold text-[#8c8c8c] mb-4">
+            <USkeleton v-if="loadingProfile" class="w-30 h-30 rounded-full mb-4" />
+            <div v-else class="w-30 h-30 rounded-full bg-[#e8e8e8] flex items-center justify-center text-4xl font-bold text-[#8c8c8c] mb-4">
               {{ profile.nombres ? profile.nombres.charAt(0).toUpperCase() : '?' }}
             </div>
             <USkeleton v-if="loadingProfile" class="h-6 w-40 mb-1" />
@@ -217,12 +217,12 @@ function cancelEdit() {
           </div>
 
           <div v-if="loadingAccounts" class="grid grid-cols-2 gap-4">
-            <USkeleton v-for="i in 2" :key="i" class="h-[130px] rounded-xl" />
+            <USkeleton v-for="i in 2" :key="i" class="h-32.5 rounded-xl" />
           </div>
 
           <template v-else-if="metodosPago.length > 0">
             <div class="grid grid-cols-2 gap-4">
-              <div v-for="cuenta in metodosPago" :key="cuenta.id" class="bg-white rounded-xl border border-[#d9d9d9] p-5 h-[130px] flex flex-col justify-between relative group">
+              <div v-for="cuenta in metodosPago" :key="cuenta.id" class="bg-white rounded-xl border border-[#d9d9d9] p-5 h-32.5 flex flex-col justify-between relative group">
                 <div class="flex items-start justify-between">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-[#f0f0f0] flex items-center justify-center">
@@ -237,7 +237,7 @@ function cancelEdit() {
                     icon="i-lucide-trash-2"
                     color="neutral"
                     variant="ghost"
-                    size="2xs"
+                    size="xs"
                     class="opacity-0 group-hover:opacity-100 transition-opacity rounded-full"
                     @click="deleteAccount(cuenta.id)"
                   />
@@ -250,7 +250,7 @@ function cancelEdit() {
             </div>
           </template>
 
-          <div v-else class="bg-white rounded-xl border-2 border-dashed border-[#d9d9d9] p-10 flex flex-col items-center justify-center cursor-pointer hover:border-[#bbb] transition-colors min-h-[160px]" @click="modalOpen = true">
+          <div v-else class="bg-white rounded-xl border-2 border-dashed border-[#d9d9d9] p-10 flex flex-col items-center justify-center cursor-pointer hover:border-[#bbb] transition-colors min-h-40" @click="modalOpen = true">
             <div class="w-12 h-12 rounded-full bg-[#f0f0f0] flex items-center justify-center mb-3">
               <UIcon name="i-lucide-plus" class="size-6 text-[#555]" />
             </div>
