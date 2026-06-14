@@ -1,0 +1,1105 @@
+{
+	"info": {
+		"_postman_id": "7f654b38-bf12-4c22-9fa9-4a949439612c",
+		"name": "Backend APIs",
+		"description": "Colección de Postman para probar todos los endpoints del backend del proyecto.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Autenticación (Auth)",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData && jsonData.token) {",
+									"    pm.collectionVariables.set(\"jwtToken\", jsonData.token);",
+									"    console.log(\"Token JWT guardado automáticamente en la variable de colección 'jwtToken'.\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"julioprofe@email.com\",\n  \"password\": \"123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Inicia sesión con un correo y contraseña. Al ejecutarse con éxito, guarda el token JWT automáticamente en la variable de colección 'jwtToken'."
+					},
+					"response": []
+				},
+				{
+					"name": "Registro",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombres\": \"Juan\",\n  \"apellidos\": \"Pérez\",\n  \"correo\": \"juan.perez@example.com\",\n  \"password\": \"Password123\",\n  \"confirmarPassword\": \"Password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Registra un nuevo usuario en la plataforma."
+					},
+					"response": []
+				},
+				{
+					"name": "Recuperar Contraseña (US-05)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"juan.perez@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/recover-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"recover-password"
+							]
+						},
+						"description": "Genera un token de recuperación y simula el envío del correo imprimiéndolo en la consola del servidor."
+					},
+					"response": []
+				},
+				{
+					"name": "Restablecer Contraseña (US-05)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"AQUÍ_EL_TOKEN_DE_CONSOLA\",\n  \"password\": \"PasswordChanged123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/reset-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"reset-password"
+							]
+						},
+						"description": "Restablece la contraseña de un usuario utilizando el token temporal obtenido de la consola del servidor."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Usuarios (Users)",
+			"item": [
+				{
+					"name": "Ver Perfil",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile"
+							]
+						},
+						"description": "Obtiene la información del perfil del usuario autenticado."
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Perfil",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombres\": \"Juan Modificado\",\n  \"telefono\": \"+51987654321\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"profile"
+							]
+						},
+						"description": "Actualiza el nombre y teléfono del perfil del usuario autenticado."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Métodos de Pago",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/metodos-pago",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"metodos-pago"
+							]
+						},
+						"description": "Lista todos los métodos de pago activos del usuario autenticado."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Método de Pago",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"banco\": \"BCP\",\n  \"numeroCuenta\": \"193-12345678-0-99\",\n  \"nombreTitular\": \"Juan Pérez\",\n  \"tipoMoneda\": \"PEN\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/metodos-pago",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"metodos-pago"
+							]
+						},
+						"description": "Registra un nuevo método de pago para el usuario autenticado."
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Método de Pago",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/metodos-pago/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"metodos-pago",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID del método de pago a eliminar"
+								}
+							]
+						},
+						"description": "Elimina un método de pago por su ID (debe pertenecer al usuario autenticado)."
+					},
+					"response": []
+				},
+				{
+					"name": "Verificar Identidad DNI (US-06)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "dniFrontal",
+									"type": "file",
+									"src": [],
+									"description": "Selecciona la imagen frontal del DNI (JPEG o PNG, máx. 5MB)"
+								},
+								{
+									"key": "dniPosterior",
+									"type": "file",
+									"src": [],
+									"description": "Selecciona la imagen posterior del DNI (JPEG o PNG, máx. 5MB)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/verify-identity",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"verify-identity"
+							]
+						},
+						"description": "Sube los archivos de imagen frontal y posterior del DNI para verificar la identidad del usuario autenticado."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Ofertas (Offers)",
+			"item": [
+				{
+					"name": "Crear Oferta",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"metodoPagoId\": 1,\n  \"tipoOperacion\": \"Venta\",\n  \"moneda\": \"USD\",\n  \"montoTotal\": 500.00,\n  \"montoMinimo\": 50.00,\n  \"montoMaximo\": 500.00,\n  \"tipoCambio\": 3.75\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/ofertas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ofertas"
+							]
+						},
+						"description": "Crea y publica una nueva oferta de compra o venta de moneda."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Ofertas Activas",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/ofertas?moneda=USD&tipoOperacion=Venta&monto=100&page=1&pageSize=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ofertas"
+							],
+							"query": [
+								{
+									"key": "moneda",
+									"value": "USD",
+									"description": "Filtro opcional por moneda"
+								},
+								{
+									"key": "tipoOperacion",
+									"value": "Venta",
+									"description": "Filtro opcional por tipo de operación (Compra o Venta)"
+								},
+								{
+									"key": "monto",
+									"value": "100",
+									"description": "Filtro opcional por monto (debe caer en el rango de la oferta)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Número de página"
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Tamaño de página"
+								}
+							]
+						},
+						"description": "Lista de forma pública (no requiere token) todas las ofertas activas filtradas por parámetros."
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar Ofertas Compatibles (Matches)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/ofertas/matches?moneda=USD&tipoOperacion=Compra&monto=150&tipoCambio=3.76",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ofertas",
+								"matches"
+							],
+							"query": [
+								{
+									"key": "moneda",
+									"value": "USD",
+									"description": "Moneda de la transacción"
+								},
+								{
+									"key": "tipoOperacion",
+									"value": "Compra",
+									"description": "Tipo de operación que el usuario desea realizar (Compra o Venta)"
+								},
+								{
+									"key": "monto",
+									"value": "150",
+									"description": "Monto de la transacción"
+								},
+								{
+									"key": "tipoCambio",
+									"value": "3.76",
+									"description": "Tipo de cambio deseado"
+								}
+							]
+						},
+						"description": "Busca ofertas compatibles (que correspondan a la operación contraria de otros usuarios) que coincidan en moneda, monto y tipo de cambio favorable."
+					},
+					"response": []
+				},
+				{
+					"name": "Modificar Oferta",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"monto_total\": 600.00,\n  \"monto_minimo\": 60.00,\n  \"monto_maximo\": 600.00,\n  \"tipo_cambio\": 3.78\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/ofertas/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ofertas",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID de la oferta a modificar"
+								}
+							]
+						},
+						"description": "Modifica los montos y el tipo de cambio de una oferta propia activa."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancelar Oferta",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/ofertas/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ofertas",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID de la oferta a cancelar"
+								}
+							]
+						},
+						"description": "Cancela (desactiva) una oferta propia."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Transacciones (Transactions)",
+			"item": [
+				{
+					"name": "Iniciar Transacción",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ofertaId\": 1,\n  \"montoOperacion\": 100.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/transacciones",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transacciones"
+							]
+						},
+						"description": "Inicia una transacción a partir de una oferta activa de otro usuario."
+					},
+					"response": []
+				},
+				{
+					"name": "Historial de Transacciones",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/transacciones/history?estado=Pendiente&page=1&pageSize=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transacciones",
+								"history"
+							],
+							"query": [
+								{
+									"key": "estado",
+									"value": "Pendiente",
+									"description": "Filtro opcional por estado (Pendiente, Pagado, Finalizado, Disputa, Cancelado)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Número de página"
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Tamaño de página"
+								}
+							]
+						},
+						"description": "Obtiene las transacciones del usuario autenticado (donde sea comprador o vendedor)."
+					},
+					"response": []
+				},
+				{
+					"name": "Ver Detalles de Transacción",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/transacciones/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transacciones",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID de la transacción"
+								}
+							]
+						},
+						"description": "Muestra los detalles completos de una transacción (sólo para los involucrados)."
+					},
+					"response": []
+				},
+				{
+					"name": "Ver Mensajes de Transacción",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/transacciones/:id/messages",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transacciones",
+								":id",
+								"messages"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID de la transacción"
+								}
+							]
+						},
+						"description": "Obtiene los mensajes de chat enviados para una transacción específica."
+					},
+					"response": []
+				},
+				{
+					"name": "Confirmar Recepción de Dinero",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/transacciones/:id/confirm",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transacciones",
+								":id",
+								"confirm"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID de la transacción"
+								}
+							]
+						},
+						"description": "Confirma la recepción del dinero por parte del vendedor, finalizando la transacción."
+					},
+					"response": []
+				},
+				{
+					"name": "Abrir Disputa",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/transacciones/:id/dispute",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transacciones",
+								":id",
+								"dispute"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID de la transacción"
+								}
+							]
+						},
+						"description": "Abre una disputa sobre la transacción (válido sólo si el estado actual es 'Pagado')."
+					},
+					"response": []
+				},
+				{
+					"name": "Subir Voucher (US-16)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": [],
+									"description": "Selecciona la imagen del voucher (JPEG o PNG, máx. 5MB)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/transacciones/:id/voucher",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"transacciones",
+								":id",
+								"voucher"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID de la transacción"
+								}
+							]
+						},
+						"description": "Sube el voucher de pago en formato JPEG o PNG (máximo 5MB) para actualizar el estado de la transacción a 'Pagado'."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Alertas (Alerts)",
+			"item": [
+				{
+					"name": "Crear Alerta",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"moneda\": \"USD\",\n  \"tipoCambioDeseado\": 3.70\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/alertas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"alertas"
+							]
+						},
+						"description": "Crea una alerta de tipo de cambio deseado para una moneda."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Alertas Activas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/alertas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"alertas"
+							]
+						},
+						"description": "Lista todas las alertas activas configuradas por el usuario autenticado."
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Alerta",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/alertas/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"alertas",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID de la alerta a eliminar"
+								}
+							]
+						},
+						"description": "Elimina (desactiva) una alerta configurada por el usuario autenticado."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Calificaciones (Ratings)",
+			"item": [
+				{
+					"name": "Calificar Transacción",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"transaccionId\": 1,\n  \"puntaje\": 5,\n  \"comentario\": \"Excelente vendedor, muy rápido.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/calificaciones",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"calificaciones"
+							]
+						},
+						"description": "Registra una calificación (puntaje de 1 a 5 y comentario) para una transacción finalizada."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Administración (Admin)",
+			"item": [
+				{
+					"name": "Listar Usuarios (Paginado)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/users?search=juan&estado=Activo&page=1&pageSize=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "juan",
+									"description": "Filtro opcional por búsqueda de nombre/apellido/correo"
+								},
+								{
+									"key": "estado",
+									"value": "Activo",
+									"description": "Filtro opcional por estado del usuario"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Número de página"
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Tamaño de página"
+								}
+							]
+						},
+						"description": "Lista de forma pagada a todos los usuarios del sistema (requiere rol Administrador)."
+					},
+					"response": []
+				},
+				{
+					"name": "Cambiar Estado de Usuario",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"estado\": \"Suspendido\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/users/:id/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users",
+								":id",
+								"status"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID del usuario"
+								}
+							]
+						},
+						"description": "Permite cambiar el estado de un usuario a 'Suspendido' o 'Bloqueado' (requiere rol Administrador)."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Disputas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/disputes?estado=Abierta&page=1&pageSize=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"disputes"
+							],
+							"query": [
+								{
+									"key": "estado",
+									"value": "Abierta",
+									"description": "Filtro opcional por estado de la disputa (Abierta, Resuelta)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Número de página"
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Tamaño de página"
+								}
+							]
+						},
+						"description": "Muestra un listado de todas las disputas registradas en la plataforma (requiere rol Administrador)."
+					},
+					"response": []
+				},
+				{
+					"name": "Resolver Disputa",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"resolucion\": \"A favor del comprador\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/disputes/:id/resolve",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"disputes",
+								":id",
+								"resolve"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID de la disputa a resolver"
+								}
+							]
+						},
+						"description": "Resuelve una disputa a favor de una de las partes ('A favor del comprador' o 'A favor del vendedor') y actualiza el estado de la transacción y de la oferta en consecuencia (requiere rol Administrador)."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5132",
+			"type": "string"
+		},
+		{
+			"key": "jwtToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwtToken}}",
+				"type": "string"
+			}
+		]
+	}
+}
