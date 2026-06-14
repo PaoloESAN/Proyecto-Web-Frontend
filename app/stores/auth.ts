@@ -6,6 +6,7 @@ interface Usuario {
   apellidos: string;
   correo: string;
   rol: "Usuario" | "Administrador";
+  esVerificado: boolean;
 }
 
 export const useAuthStore = defineStore("auth", () => {

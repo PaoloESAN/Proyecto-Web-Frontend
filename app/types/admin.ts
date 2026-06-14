@@ -12,6 +12,7 @@ export interface GetUsersAdminResponse {
     rol: string;
     estado: string;
     fechaRegistro: string;
+    esVerificado: boolean;
   }[];
 }
 

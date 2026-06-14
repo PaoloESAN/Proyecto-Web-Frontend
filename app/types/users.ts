@@ -7,6 +7,7 @@ export interface UserProfileResponse {
   rol: string;
   estado: string;
   fechaRegistro: string;
+  esVerificado: boolean;
 }
 
 export interface UpdateProfileRequest {

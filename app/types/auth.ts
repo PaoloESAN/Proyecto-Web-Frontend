@@ -12,6 +12,7 @@ export interface LoginResponse {
     apellidos: string;
     correo: string;
     rol: "Usuario" | "Administrador";
+    esVerificado: boolean;
   };
 }
 
@@ -32,6 +33,7 @@ export interface RegisterResponse {
     correo: string;
     rol: string;
     estado: string;
+    esVerificado: boolean;
   };
 }
 

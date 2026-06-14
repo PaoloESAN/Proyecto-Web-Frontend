@@ -96,6 +96,7 @@ export interface ErrorResponse {
         apellidos: string;
         correo: string;
         rol: "Usuario" | "Administrador";
+        esVerificado: boolean;
       };
     }
     ```
@@ -126,6 +127,7 @@ export interface ErrorResponse {
         correo: string;
         rol: string;
         estado: string; // "Activo"
+        esVerificado: boolean;
       };
     }
     ```
@@ -188,6 +190,7 @@ export interface ErrorResponse {
       rol: string;
       estado: string;
       fechaRegistro: string;
+      esVerificado: boolean;
     }
     ```
   - `401 Unauthorized` / `404 Not Found`.
@@ -727,6 +730,7 @@ export interface ErrorResponse {
         rol: string;
         estado: string;
         fechaRegistro: string;
+        esVerificado: boolean;
       }[];
     }
     ```
