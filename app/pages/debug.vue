@@ -143,6 +143,16 @@ async function handleLogout() {
         </div>
       </section>
 
+      <!-- Panel de Administración -->
+      <section v-if="authStore.isAdmin" class="bg-white dark:bg-neutral-900 border border-primary-200 dark:border-primary-800 rounded-2xl p-6 shadow-md space-y-4">
+        <h2 class="text-lg font-bold flex items-center gap-2">
+          <UIcon name="i-lucide-shield" class="text-primary size-5" />
+          Panel de Administración
+        </h2>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">Tienes permisos de administrador. Accede a las herramientas de gestión.</p>
+        <UButton label="Gestionar Usuarios" color="primary" icon="i-lucide-users" @click="navigateTo('/admin/users')" />
+      </section>
+
       <!-- Configurador de Parámetros de Prueba -->
       <section
         class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-md space-y-4"
