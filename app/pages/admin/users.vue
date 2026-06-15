@@ -10,7 +10,7 @@ const api = useApi()
 const authStore = useAuthStore()
 
 const search = ref('')
-const estadoFilter = ref('')
+const estadoFilter = ref('Todos')
 const page = ref(1)
 const pageSize = 10
 
@@ -18,12 +18,17 @@ const data = ref<GetUsersAdminResponse | null>(null)
 const loading = ref(false)
 const updatingId = ref<number | null>(null)
 
+function getEstadoParam(val: string) {
+  return val === 'Todos' ? '' : val
+}
+
 async function fetchUsers() {
   loading.value = true
   try {
     const params: Record<string, any> = { page: page.value, pageSize }
     if (search.value) params.search = search.value
-    if (estadoFilter.value) params.estado = estadoFilter.value
+    const estado = getEstadoParam(estadoFilter.value)
+    if (estado) params.estado = estado
     const res = await api<GetUsersAdminResponse>('/api/admin/users', { params })
     data.value = res
   } catch {
@@ -33,12 +38,7 @@ async function fetchUsers() {
   }
 }
 
-const statusOptions = [
-  { label: 'Todos', value: '' },
-  { label: 'Activo', value: 'Activo' },
-  { label: 'Suspendido', value: 'Suspendido' },
-  { label: 'Bloqueado', value: 'Bloqueado' },
-]
+const statusOptions = ['Todos', 'Activo', 'Suspendido', 'Bloqueado']
 
 function getEstadoColor(estado: string) {
   switch (estado) {
@@ -49,7 +49,7 @@ function getEstadoColor(estado: string) {
   }
 }
 
-async function updateStatus(usuarioId: number, nuevoEstado: 'Suspendido' | 'Bloqueado') {
+async function updateStatus(usuarioId: number, nuevoEstado: 'Activo' | 'Suspendido' | 'Bloqueado') {
   updatingId.value = usuarioId
   try {
     await api<UpdateUserStatusResponse>(`/api/admin/users/${usuarioId}/status`, {
@@ -73,6 +73,8 @@ onMounted(() => {
   }
   fetchUsers()
 })
+
+watch(estadoFilter, () => { page.value = 1; fetchUsers() })
 
 function totalPages() {
   return data.value?.totalPaginas || 1
@@ -99,7 +101,7 @@ function totalPages() {
         <div class="p-5 border-b border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div class="flex gap-3 items-center flex-1">
             <UInput v-model="search" placeholder="Buscar por nombre o correo..." icon="i-lucide-search" class="w-full sm:w-72" @keyup.enter="fetchUsers" />
-            <USelect v-model="estadoFilter" :items="statusOptions" class="w-40" @change="fetchUsers" />
+            <USelect v-model="estadoFilter" :items="statusOptions" class="w-40" />
           </div>
           <UButton label="Buscar" color="primary" :loading="loading" @click="fetchUsers" />
         </div>
@@ -141,8 +143,11 @@ function totalPages() {
                 <td class="px-5 py-4 text-xs text-neutral-500">{{ new Date(user.fechaRegistro).toLocaleDateString() }}</td>
                 <td class="px-5 py-4 text-right">
                   <UDropdownMenu :items="[
-                    { label: 'Suspendido', icon: 'i-lucide-pause-circle', onSelect: () => updateStatus(user.usuarioId, 'Suspendido') },
-                    { label: 'Bloqueado', icon: 'i-lucide-ban', onSelect: () => updateStatus(user.usuarioId, 'Bloqueado') },
+                    [{ label: 'Activo', icon: 'i-lucide-check-circle', onSelect: () => updateStatus(user.usuarioId, 'Activo') }],
+                    [
+                      { label: 'Suspendido', icon: 'i-lucide-pause-circle', onSelect: () => updateStatus(user.usuarioId, 'Suspendido') },
+                      { label: 'Bloqueado', icon: 'i-lucide-ban', onSelect: () => updateStatus(user.usuarioId, 'Bloqueado') },
+                    ]
                   ]">
                     <UButton label="Cambiar estado" color="neutral" variant="outline" size="xs" :loading="updatingId === user.usuarioId" icon="i-lucide-chevron-down" trailing />
                   </UDropdownMenu>
