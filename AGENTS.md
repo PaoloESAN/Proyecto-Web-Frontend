@@ -744,7 +744,7 @@ export interface ErrorResponse {
 - **Request Body**:
   ```typescript
   export interface UpdateUserStatusRequest {
-    estado: "Suspendido" | "Bloqueado";
+    estado: "Activo" | "Suspendido" | "Bloqueado";
   }
   ```
 - **Respuestas**:
