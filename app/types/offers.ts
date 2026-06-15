@@ -49,6 +49,7 @@ export interface GetOffersResponse {
       nombres: string;
       apellidos: string;
       correo: string;
+      calificacion: number;
     };
   }[];
 }
@@ -75,6 +76,7 @@ export interface MatchedOferta {
     nombres: string;
     apellidos: string;
     correo: string;
+    calificacion: number;
   };
 }
 
@@ -85,4 +87,30 @@ export interface OfertaUpdateRequest {
   monto_minimo: number;
   monto_maximo: number;
   tipo_cambio: number;
+}
+
+export interface OfertaDetalleResponse {
+  ofertaId: number;
+  tipoOperacion: "Compra" | "Venta";
+  moneda: string;
+  montoTotal: number;
+  montoMinimo: number;
+  montoMaximo: number;
+  tipoCambio: number;
+  estado: string;
+  fechaPublicacion: string;
+  metodoPago: {
+    metodoPagoId: number;
+    banco: string;
+    nombreTitular: string;
+    numeroCuenta: string;
+    tipoMoneda: string;
+  } | null;
+  usuarioCreador: {
+    usuarioId: number;
+    nombres: string;
+    apellidos: string;
+    correo: string;
+    calificacion: number;
+  } | null;
 }

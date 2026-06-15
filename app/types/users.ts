@@ -3,16 +3,15 @@ export interface UserProfileResponse {
   nombres: string;
   apellidos: string;
   correo: string;
-  telefono: string | null;
   rol: string;
   estado: string;
   fechaRegistro: string;
   esVerificado: boolean;
+  calificacion: number;
 }
 
 export interface UpdateProfileRequest {
   nombres: string;
-  telefono: string;
 }
 
 export interface UpdateProfileResponse {
@@ -22,7 +21,6 @@ export interface UpdateProfileResponse {
     nombres: string;
     apellidos: string;
     correo: string;
-    telefono: string;
     rol: string;
   };
 }

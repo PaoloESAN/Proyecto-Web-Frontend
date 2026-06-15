@@ -54,6 +54,7 @@ Para el desarrollo y mantenimiento del frontend, el agente debe dominar y aplica
 - **Resolución de Disputas**: Exclusivo para administradores. La resolución es binaria:
   - **A favor del comprador**: La transacción se cambia a estado `Cancelado` y la oferta vuelve a estar `Activa` (los fondos vuelven al vendedor).
   - **A favor del vendedor**: La transacción se cambia a estado `Finalizado` (los fondos quedan liquidados).
+- **Calificación del Usuario**: Cada usuario posee un atributo `calificacion` (promedio del 1.00 al 5.00) en la tabla `usuarios`. Este promedio se actualiza de forma automática cada vez que otro usuario registra una nueva calificación para él (`POST /api/calificaciones`).
 
 ---
 
@@ -188,11 +189,11 @@ export interface ErrorResponse {
       nombres: string;
       apellidos: string;
       correo: string;
-      telefono: string | null;
       rol: string;
       estado: string;
       fechaRegistro: string;
       esVerificado: boolean;
+      calificacion: number;
     }
     ```
   - `401 Unauthorized` / `404 Not Found`.
@@ -204,7 +205,6 @@ export interface ErrorResponse {
   ```typescript
   export interface UpdateProfileRequest {
     nombres: string;
-    telefono: string;
   }
   ```
 - **Respuestas**:
@@ -217,7 +217,6 @@ export interface ErrorResponse {
         nombres: string;
         apellidos: string;
         correo: string;
-        telefono: string;
         rol: string;
       };
     }
@@ -342,7 +341,7 @@ export interface ErrorResponse {
 
 #### `GET /api/ofertas`
 
-- **Público**
+- **Público** (Muestra ofertas en estado "Activa" y "En Proceso")
 - **Query Parameters**:
   - `moneda`?: string
   - `tipoOperacion`?: "Compra" | "Venta"
@@ -379,10 +378,45 @@ export interface ErrorResponse {
           nombres: string;
           apellidos: string;
           correo: string;
+          calificacion: number;
         };
       }[];
     }
     ```
+
+#### `GET /api/ofertas/:id`
+
+- **Público**
+- **Respuestas**:
+  - `200 OK`:
+    ```typescript
+    export interface OfertaDetalleResponse {
+      ofertaId: number;
+      tipoOperacion: "Compra" | "Venta";
+      moneda: string;
+      montoTotal: number;
+      montoMinimo: number;
+      montoMaximo: number;
+      tipoCambio: number;
+      estado: string;
+      fechaPublicacion: string;
+      metodoPago: {
+        metodoPagoId: number;
+        banco: string;
+        nombreTitular: string;
+        numeroCuenta: string;
+        tipoMoneda: string;
+      } | null;
+      usuarioCreador: {
+        usuarioId: number;
+        nombres: string;
+        apellidos: string;
+        correo: string;
+        calificacion: number;
+      } | null;
+    }
+    ```
+  - `404 Not Found`: `ErrorResponse` (La oferta especificada no existe).
 
 #### `GET /api/ofertas/matches`
 
@@ -417,6 +451,7 @@ export interface ErrorResponse {
         nombres: string;
         apellidos: string;
         correo: string;
+        calificacion: number;
       };
     }[];
     ```
@@ -728,7 +763,6 @@ export interface ErrorResponse {
         nombres: string;
         apellidos: string;
         correo: string;
-        telefono: string | null;
         rol: string;
         estado: string;
         fechaRegistro: string;
