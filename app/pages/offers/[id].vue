@@ -17,13 +17,12 @@ const loading = ref(true);
 const offer = ref<OfertaDetalleResponse | null>(null);
 const errorMsg = ref<string | null>(null);
 const transactionLoading = ref(false);
+const confirmModalOpen = ref(false);
 
-// Form State
 const state = reactive({
   montoOperacion: 0,
 });
 
-// Cargar la información de la oferta directamente por ID
 async function fetchOffer() {
   loading.value = true;
   errorMsg.value = null;
@@ -50,7 +49,6 @@ onMounted(() => {
   fetchOffer();
 });
 
-// Lógica de conversión de divisas en tiempo real
 const conversion = computed(() => {
   if (!offer.value)
     return {
@@ -66,7 +64,6 @@ const conversion = computed(() => {
   const bankCurrency = offer.value.metodoPago?.tipoMoneda || "PEN";
 
   if (offer.value.tipoOperacion === "Venta") {
-    // El creador vende moneda (ej. USD). El visitante COMPRA esa moneda.
     return {
       entrega: totalConverted,
       recibe: amount,
@@ -74,7 +71,6 @@ const conversion = computed(() => {
       currencyRecibe: offer.value.moneda,
     };
   } else {
-    // El creador compra moneda (ej. USD). El visitante VENDE esa moneda.
     return {
       entrega: amount,
       recibe: totalConverted,
@@ -84,7 +80,6 @@ const conversion = computed(() => {
   }
 });
 
-// Validación dinámica con Zod basada en los límites de la oferta
 const schema = computed(() => {
   const min = offer.value?.montoMinimo ?? 0;
   const max = offer.value?.montoMaximo ?? 999999999;
@@ -102,7 +97,6 @@ const schema = computed(() => {
   });
 });
 
-// Manejo del envío del formulario e inicio de la transacción
 async function onSubmit(event: FormSubmitEvent<any>) {
   if (!authStore.isAuthenticated) {
     toast.add({
@@ -126,11 +120,15 @@ async function onSubmit(event: FormSubmitEvent<any>) {
     return;
   }
 
+  confirmModalOpen.value = true;
+}
+
+async function executeTransaction() {
   transactionLoading.value = true;
   try {
     const payload = {
       ofertaId: offerId,
-      montoOperacion: event.data.montoOperacion,
+      montoOperacion: state.montoOperacion,
     };
 
     const res = await api<TransaccionCreateResponse>("/api/transacciones", {
@@ -145,7 +143,7 @@ async function onSubmit(event: FormSubmitEvent<any>) {
       icon: "i-lucide-circle-check",
     });
 
-    // Redirigir a la sala de transacción
+    confirmModalOpen.value = false;
     navigateTo(`/transaction/${res.transaccion.transaccionId}`);
   } catch (error: any) {
     const errorData = error.data as ErrorResponse | undefined;
@@ -161,7 +159,6 @@ async function onSubmit(event: FormSubmitEvent<any>) {
   }
 }
 
-// Comprobación si la oferta es del usuario activo
 const isOwnOffer = computed(() => {
   return (
     authStore.isAuthenticated &&
@@ -288,7 +285,12 @@ const isOwnOffer = computed(() => {
                   class="mt-4 flex items-center gap-1.5 text-amber-500 bg-amber-500/10 dark:bg-amber-500/20 px-3 py-1 rounded-full text-xs font-bold"
                 >
                   <UIcon name="i-lucide-star" class="size-3.5 fill-amber-500" />
-                  <span>{{ offer.usuarioCreador.calificacion?.toFixed(2) ?? '0.00' }} (Calificación)</span>
+                  <span
+                    >{{
+                      offer.usuarioCreador.calificacion?.toFixed(2) ?? "0.00"
+                    }}
+                    (Calificación)</span
+                  >
                 </div>
               </div>
               <div v-else class="text-center py-8 text-muted text-xs">
@@ -668,5 +670,81 @@ const isOwnOffer = computed(() => {
         </div>
       </div>
     </main>
+
+    <!-- Modal de Confirmación de Transacción -->
+    <UModal
+      v-model:open="confirmModalOpen"
+      title="Confirmar Transacción"
+      description="Por favor, confirma los detalles de tu operación antes de iniciar el intercambio P2P."
+    >
+      <template #body>
+        <div class="space-y-4" v-if="offer">
+          <!-- Resumen de los montos -->
+          <div
+            class="p-4 bg-neutral-100 dark:bg-neutral-800 rounded-xl border border-default space-y-3"
+          >
+            <div class="flex justify-between items-center text-xs text-muted">
+              <span>Monto a operar:</span>
+              <span class="font-bold text-highlighted">
+                {{ state.montoOperacion.toLocaleString() }} {{ offer.moneda }}
+              </span>
+            </div>
+            <div class="flex justify-between items-center text-xs text-muted">
+              <span>Tipo de cambio:</span>
+              <span class="font-bold text-highlighted">
+                {{ offer.tipoCambio.toFixed(4) }}
+                {{ offer.metodoPago?.tipoMoneda || "PEN" }}
+              </span>
+            </div>
+
+            <div
+              class="border-t border-dashed border-default pt-2 flex justify-between items-center text-xs"
+            >
+              <span class="font-semibold text-muted">Tú Entregas:</span>
+              <span class="font-extrabold text-highlighted">
+                {{
+                  conversion.entrega.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+                }}
+                {{ conversion.currencyEntrega }}
+              </span>
+            </div>
+
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold text-primary">Tú Recibes:</span>
+              <span class="font-black text-primary">
+                {{
+                  conversion.recibe.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+                }}
+                {{ conversion.currencyRecibe }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template #footer="{ close }">
+        <div class="flex justify-end gap-3 w-full">
+          <UButton
+            label="Cancelar"
+            color="neutral"
+            variant="outline"
+            :disabled="transactionLoading"
+            @click="close"
+          />
+          <UButton
+            label="Confirmar e Iniciar"
+            color="primary"
+            icon="i-lucide-arrow-right-left"
+            :loading="transactionLoading"
+            @click="executeTransaction"
+          />
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
