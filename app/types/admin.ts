@@ -17,7 +17,7 @@ export interface GetUsersAdminResponse {
 }
 
 export interface UpdateUserStatusRequest {
-  estado: "Activo" | "Suspendido" | "Bloqueado";
+  estado: "Suspendido" | "Bloqueado";
 }
 
 export interface UpdateUserStatusResponse {

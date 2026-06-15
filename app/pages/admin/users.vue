@@ -49,7 +49,7 @@ function getEstadoColor(estado: string) {
   }
 }
 
-async function updateStatus(usuarioId: number, nuevoEstado: 'Activo' | 'Suspendido' | 'Bloqueado') {
+async function updateStatus(usuarioId: number, nuevoEstado: 'Suspendido' | 'Bloqueado') {
   updatingId.value = usuarioId
   try {
     await api<UpdateUserStatusResponse>(`/api/admin/users/${usuarioId}/status`, {
@@ -141,11 +141,8 @@ function totalPages() {
                 <td class="px-5 py-4 text-xs text-neutral-500">{{ new Date(user.fechaRegistro).toLocaleDateString() }}</td>
                 <td class="px-5 py-4 text-right">
                   <UDropdownMenu :items="[
-                    [{ label: 'Activo', icon: 'i-lucide-check-circle', onSelect: () => updateStatus(user.usuarioId, 'Activo') }],
-                    [
-                      { label: 'Suspendido', icon: 'i-lucide-pause-circle', onSelect: () => updateStatus(user.usuarioId, 'Suspendido') },
-                      { label: 'Bloqueado', icon: 'i-lucide-ban', onSelect: () => updateStatus(user.usuarioId, 'Bloqueado') },
-                    ]
+                    { label: 'Suspendido', icon: 'i-lucide-pause-circle', onSelect: () => updateStatus(user.usuarioId, 'Suspendido') },
+                    { label: 'Bloqueado', icon: 'i-lucide-ban', onSelect: () => updateStatus(user.usuarioId, 'Bloqueado') },
                   ]">
                     <UButton label="Cambiar estado" color="neutral" variant="outline" size="xs" :loading="updatingId === user.usuarioId" icon="i-lucide-chevron-down" trailing />
                   </UDropdownMenu>
