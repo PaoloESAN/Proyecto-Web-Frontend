@@ -1,11 +1,28 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
+import type { UserProfileResponse } from "~/types";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const api = useApi();
 
 const testTransactionId = ref("1");
 const testOfferId = ref("1");
+const profile = ref<UserProfileResponse | null>(null);
+const loadingProfile = ref(false);
+
+onMounted(async () => {
+  if (authStore.isAuthenticated) {
+    loadingProfile.value = true;
+    try {
+      profile.value = await api<UserProfileResponse>("/api/users/profile");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      loadingProfile.value = false;
+    }
+  }
+});
 
 // Obtener todas las rutas de la aplicación desde Nuxt
 const availableRoutes = computed(() => {
@@ -134,6 +151,20 @@ async function handleLogout() {
             </div>
           </div>
 
+          <div class="space-y-1">
+            <span class="text-xs text-neutral-500 dark:text-neutral-400 font-semibold block uppercase tracking-wider">Calificación</span>
+            <div>
+              <USkeleton v-if="loadingProfile" class="h-6 w-24 rounded-full" />
+              <div 
+                v-else-if="profile"
+                class="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold"
+              >
+                <UIcon name="i-lucide-star" class="size-3.5 fill-amber-500" />
+                <span>{{ profile.calificacion?.toFixed(2) ?? '0.00' }} (Calificación)</span>
+              </div>
+              <span v-else class="text-sm font-medium text-neutral-500 dark:text-neutral-400">-</span>
+            </div>
+          </div>
 
         </div>
         

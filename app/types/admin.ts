@@ -8,7 +8,6 @@ export interface GetUsersAdminResponse {
     nombres: string;
     apellidos: string;
     correo: string;
-    telefono: string | null;
     rol: string;
     estado: string;
     fechaRegistro: string;

@@ -22,7 +22,6 @@ async function fetchProfile() {
   try {
     profile.value = await api<UserProfileResponse>('/api/users/profile')
     profileState.nombres = profile.value.nombres
-    profileState.telefono = profile.value.telefono ?? ''
   } catch {
     toast.add({ title: 'Error', description: 'No se pudo cargar el perfil', color: 'error', icon: 'i-lucide-alert-circle' })
   } finally {
@@ -45,24 +44,22 @@ const editingProfile = ref(false)
 const savingProfile = ref(false)
 
 const profileSchema = z.object({
-  nombres: z.string().min(1, 'El nombre es requerido').max(100, 'Máximo 100 caracteres'),
-  telefono: z.string().min(1, 'El teléfono es requerido')
+  nombres: z.string().min(1, 'El nombre es requerido').max(100, 'Máximo 100 caracteres')
 })
 
 type ProfileSchema = z.output<typeof profileSchema>
-const profileState = reactive<Partial<ProfileSchema>>({ nombres: '', telefono: '' })
+const profileState = reactive<Partial<ProfileSchema>>({ nombres: '' })
 
 async function onSubmitProfile(event: FormSubmitEvent<ProfileSchema>) {
   savingProfile.value = true
   try {
     const res = await api<UpdateProfileResponse>('/api/users/profile', {
       method: 'PUT',
-      body: { nombres: event.data.nombres, telefono: event.data.telefono }
+      body: { nombres: event.data.nombres }
     })
     toast.add({ title: 'Perfil actualizado', color: 'success', icon: 'i-lucide-circle-check' })
     if (profile.value) {
       profile.value.nombres = res.usuario.nombres
-      profile.value.telefono = res.usuario.telefono
     }
     editingProfile.value = false
   } catch {
@@ -76,7 +73,6 @@ function cancelEdit() {
   editingProfile.value = false
   if (profile.value) {
     profileState.nombres = profile.value.nombres
-    profileState.telefono = profile.value.telefono ?? ''
   }
 }
 
@@ -206,8 +202,11 @@ onMounted(() => {
             <USkeleton v-if="loadingProfile" class="h-4 w-48 mb-1" />
             <p v-else class="text-sm text-muted">{{ profile?.correo }}</p>
 
-            <USkeleton v-if="loadingProfile" class="h-4 w-32" />
-            <p v-else class="text-sm text-muted">{{ profile?.telefono }}</p>
+            <USkeleton v-if="loadingProfile" class="h-4 w-32 mx-auto" />
+            <div v-else class="flex items-center justify-center gap-1.5 text-xs text-amber-500 font-bold mt-1">
+              <UIcon name="i-lucide-star" class="size-3.5 fill-amber-500" />
+              <span>{{ profile?.calificacion?.toFixed(2) ?? '0.00' }} (Calificación)</span>
+            </div>
           </UCard>
 
           <UCard :ui="{ body: 'space-y-4' }">
@@ -237,9 +236,7 @@ onMounted(() => {
               <UFormField name="nombres" label="Nombre completo" required>
                 <UInput v-model="profileState.nombres" class="w-full" />
               </UFormField>
-              <UFormField name="telefono" label="Teléfono" required>
-                <UInput v-model="profileState.telefono" class="w-full" />
-              </UFormField>
+
               <div class="flex justify-end gap-3 pt-2">
                 <UButton label="Cancelar" color="neutral" variant="outline" @click="cancelEdit" />
                 <UButton type="submit" label="Guardar" color="primary" :loading="savingProfile" />
