@@ -27,8 +27,10 @@ async function fetchAlertas() {
 
 const modalOpen = ref(false)
 
+const monedas = ['USD', 'EUR', 'GBP', 'MXN', 'PEN']
+
 const schema = z.object({
-  moneda: z.string().min(1, 'La moneda es requerida').max(3, 'Máximo 3 caracteres'),
+  moneda: z.string().min(1, 'Selecciona una moneda'),
   tipoCambioDeseado: z.number({ message: 'Debe ser un número' }).positive('Debe ser mayor a 0')
 })
 
@@ -136,7 +138,7 @@ onMounted(fetchAlertas)
       <template #body>
         <UForm id="alerta-form" :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
           <UFormField name="moneda" label="Moneda" required>
-            <UInput v-model="state.moneda" placeholder="Ej: USD" class="w-full" maxlength="3" />
+            <USelect v-model="state.moneda" :items="monedas" placeholder="Selecciona una moneda" class="w-full" />
           </UFormField>
           <UFormField name="tipoCambioDeseado" label="Tipo de Cambio Deseado" required>
             <UInput v-model="state.tipoCambioDeseado" type="number" step="0.01" placeholder="Ej: 3.75" class="w-full" />
