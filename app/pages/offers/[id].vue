@@ -5,6 +5,7 @@ import type {
   OfertaDetalleResponse,
   TransaccionCreateResponse,
   ErrorResponse,
+  MetodoPagoResponse,
 } from "~/types";
 
 const route = useRoute();
@@ -19,8 +20,12 @@ const errorMsg = ref<string | null>(null);
 const transactionLoading = ref(false);
 const confirmModalOpen = ref(false);
 
+const metodosPago = ref<MetodoPagoResponse[]>([]);
+const loadingAccounts = ref(false);
+
 const state = reactive({
   montoOperacion: 0,
+  metodoPagoId: undefined as number | undefined,
 });
 
 async function fetchOffer() {
@@ -45,8 +50,41 @@ async function fetchOffer() {
   }
 }
 
-onMounted(() => {
-  fetchOffer();
+async function fetchAccounts() {
+  if (!authStore.isAuthenticated) return;
+  loadingAccounts.value = true;
+  try {
+    const response = await api<MetodoPagoResponse[]>("/api/users/metodos-pago");
+    metodosPago.value = response;
+    
+    // Auto-select first account matching the target currency of the offer
+    const targetCurrency = offer.value?.moneda || "PEN";
+    const matchingAccount = response.find((m) => m.tipoMoneda === targetCurrency);
+    if (matchingAccount) {
+      state.metodoPagoId = matchingAccount.metodoPagoId;
+    } else {
+      state.metodoPagoId = undefined;
+    }
+  } catch (err) {
+    console.error("Error al cargar cuentas de pago:", err);
+  } finally {
+    loadingAccounts.value = false;
+  }
+}
+
+onMounted(async () => {
+  await fetchOffer();
+  await fetchAccounts();
+});
+
+const metodosPagoOptions = computed(() => {
+  const targetCurrency = offer.value?.moneda || "PEN";
+  return metodosPago.value
+    .filter((m) => m.tipoMoneda === targetCurrency)
+    .map((m) => ({
+      label: `${m.banco} - ${m.numeroCuenta} (${m.tipoMoneda})`,
+      value: m.metodoPagoId,
+    }));
 });
 
 const conversion = computed(() => {
@@ -94,6 +132,7 @@ const schema = computed(() => {
         Math.min(max, total),
         `El monto máximo permitido es ${Math.min(max, total)} ${currency}`,
       ),
+    metodoPagoId: z.number({ message: "Selecciona una cuenta bancaria" }),
   });
 });
 
@@ -120,6 +159,25 @@ async function onSubmit(event: FormSubmitEvent<any>) {
     return;
   }
 
+  if (metodosPago.value.length === 0) {
+    toast.add({
+      title: "Cuenta Requerida",
+      description: "Debes registrar al menos una cuenta bancaria en tu perfil para comerciar.",
+      color: "warning",
+      icon: "i-lucide-alert-circle",
+    });
+    return;
+  }
+
+  if (!state.metodoPagoId) {
+    toast.add({
+      title: "Selecciona una cuenta",
+      description: "Por favor, selecciona una de tus cuentas bancarias para el intercambio.",
+      color: "warning",
+    });
+    return;
+  }
+
   confirmModalOpen.value = true;
 }
 
@@ -129,6 +187,7 @@ async function executeTransaction() {
     const payload = {
       ofertaId: offerId,
       montoOperacion: state.montoOperacion,
+      metodoPagoCompradorId: state.metodoPagoId,
     };
 
     const res = await api<TransaccionCreateResponse>("/api/transacciones", {
@@ -144,7 +203,7 @@ async function executeTransaction() {
     });
 
     confirmModalOpen.value = false;
-    navigateTo(`/transaction/${res.transaccion.transaccionId}`);
+    navigateTo(`/transaction/${res.transaccion.transaccionId}?accountId=${state.metodoPagoId}`);
   } catch (error: any) {
     const errorData = error.data as ErrorResponse | undefined;
     toast.add({
@@ -593,6 +652,35 @@ const isOwnOffer = computed(() => {
                       }}</span>
                     </template>
                   </UInput>
+                </UFormField>
+
+                <!-- Selección de Cuenta Bancaria -->
+                <div v-if="metodosPago.length === 0" class="p-3.5 bg-yellow-500/10 border border-yellow-500/20 rounded-xl space-y-2">
+                  <p class="text-xs text-yellow-800 dark:text-yellow-400 font-medium">
+                    No tienes cuentas bancarias registradas. Para comerciar, primero debes agregar al menos una cuenta en tu perfil.
+                  </p>
+                  <UButton
+                    label="Registrar Cuenta en Perfil"
+                    color="warning"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-user"
+                    @click="navigateTo('/profile')"
+                  />
+                </div>
+
+                <UFormField
+                  v-else
+                  name="metodoPagoId"
+                  label="Selecciona tu Cuenta Bancaria"
+                  required
+                >
+                  <USelect
+                    v-model.number="state.metodoPagoId"
+                    :items="metodosPagoOptions"
+                    placeholder="Selecciona una cuenta"
+                    class="w-full font-bold"
+                  />
                 </UFormField>
 
                 <!-- Panel de Detalle de la Conversión -->

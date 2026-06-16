@@ -47,10 +47,10 @@ Para el desarrollo y mantenimiento del frontend, el agente debe dominar y aplica
 
 - **Límites de Oferta**: Una oferta tiene un `montoTotal` (inventario del usuario) y límites por transacción (`montoMinimo` y `montoMaximo`). El monto mínimo NUNCA puede superar al máximo.
 - **Seguridad Transaccional**: El flujo de intercambio bloquea la edición/cancelación. Si una oferta tiene transacciones en estado `Pendiente`, `Pagado` o `Disputa`, no puede ser modificada (`PUT`) ni cancelada/eliminada (`DELETE`).
-- **Ciclo de Transacciones**:
-  1. `Pendiente`: Comprador inicia la transacción reservando fondos de la oferta.
-  2. `Pagado`: Comprador transfiere el dinero y sube el voucher de pago (`POST /api/transacciones/:id/voucher`).
-  3. `Finalizado` o `Disputa`: El vendedor confirma la recepción del dinero (Finalizado) o abre un conflicto (Disputa).
+- **Ciclo de Transacciones (Doble Confirmación)**:
+  1. `Pendiente`: Comprador inicia la transacción seleccionando su cuenta de recepción. Ambos participantes ven sus cuentas cruzadas.
+  2. `Pagado` / `Confirmación Parcial`: Ambos participantes deben realizar sus transferencias cruzadas y subir sus respectivos comprobantes de pago (`POST /api/transacciones/:id/voucher`).
+  3. `Finalizado` o `Disputa`: Ambos participantes deben verificar el comprobante de la contraparte y presionar "Confirmar Pago Correcto" (`POST /api/transacciones/:id/confirm`). Solo cuando ambos confirman (`confirmadoComprador == true` y `confirmadoVendedor == true`), la transacción pasa a estado `Finalizado`. Cualquiera de las partes puede abrir un conflicto (`Disputa`) antes de confirmar.
 - **Resolución de Disputas**: Exclusivo para administradores. La resolución es binaria:
   - **A favor del comprador**: La transacción se cambia a estado `Cancelado` y la oferta vuelve a estar `Activa` (los fondos vuelven al vendedor).
   - **A favor del vendedor**: La transacción se cambia a estado `Finalizado` (los fondos quedan liquidados).
@@ -502,6 +502,7 @@ export interface ErrorResponse {
   export interface TransaccionCreateRequest {
     ofertaId: number;
     montoOperacion: number; // Debe cumplir los límites de la oferta
+    metodoPagoCompradorId: number; // Cuenta bancaria seleccionada por el comprador
   }
   ```
 - **Respuestas**:
@@ -514,6 +515,7 @@ export interface ErrorResponse {
         ofertaId: number;
         usuarioCompradorId: number;
         usuarioVendedorId: number;
+        metodoPagoCompradorId: number;
         montoOperacion: number;
         tipoCambioAplicado: number;
         estado: "Pendiente";
@@ -593,6 +595,21 @@ export interface ErrorResponse {
         nombreTitular: string;
         tipoMoneda: string;
       };
+      metodoPagoComprador: {
+        banco: string;
+        numeroCuenta: string;
+        nombreTitular: string;
+        tipoMoneda: string;
+      } | null;
+      comprobantes?: {
+        comprobanteId: number;
+        usuarioId: number;
+        imagenUrl: string;
+        fechaSubida: string;
+      }[];
+      confirmadoComprador: boolean;
+      confirmadoVendedor: boolean;
+      yaCalificado: boolean;
     }
     ```
   - `401 Unauthorized` / `403 Forbidden` / `404 Not Found`.
@@ -616,14 +633,16 @@ export interface ErrorResponse {
 
 #### `POST /api/transacciones/:id/confirm`
 
-- **Requiere Auth** (Solo Vendedor)
+- **Requiere Auth** (Ambos participantes)
 - **Respuestas**:
   - `200 OK`:
     ```typescript
     export interface ConfirmReceiptResponse {
-      mensaje: string; // "Transacción finalizada exitosamente..."
+      mensaje: string; // "Confirmación registrada exitosamente..."
       transaccionId: number;
-      estado: "Finalizado";
+      estado: string; // "Pendiente" | "Pagado" | "Finalizado"
+      confirmadoComprador: boolean;
+      confirmadoVendedor: boolean;
       fechaActualizacion: string;
     }
     ```
@@ -907,3 +926,25 @@ El Frontend debe habilitar una comunicación interactiva instantánea en la vist
        fechaEnvio: string;
      }
      ```
+
+---
+
+## 6. Flujo de Transacción P2P, Cuentas Bancarias Cruzadas y Doble Confirmación
+
+La vista detallada de la transacción (`app/pages/transaction/[id].vue`) implementa un flujo interactivo estructurado y seguro para ambas partes:
+
+### A. Cuentas Bancarias Cruzadas
+Para facilitar el intercambio sin confusiones sobre a dónde enviar el dinero, el sistema calcula y muestra de forma cruzada las cuentas:
+1. **Cuenta Destino (Enviar Pago)**: Representa la cuenta bancaria de la **contraparte**. El usuario actual debe transferir fondos a este banco, número de cuenta y titular.
+2. **Tu Cuenta de Recepción (Recibir Pago)**: Representa la cuenta del **usuario actual** configurada para esta transacción. Es el destino donde la contraparte depositará los fondos del intercambio.
+
+### B. Desglose de Montos Exactos
+La interfaz de usuario calcula dinámicamente:
+* **Monto a Enviar**: En la moneda destino, aplicando el tipo de cambio pactado en la oferta si la divisa es distinta al activo base.
+* **Monto a Recibir**: El monto y divisa esperada en la cuenta receptora del usuario.
+Esto asegura que ambos usuarios sepan exactamente cuántas unidades de fiat enviar y recibir.
+
+### C. Flujo de Doble Confirmación y Voucher
+1. **Envío de Comprobante**: Ambas partes deben realizar su transferencia correspondiente y subir su comprobante de pago (`POST /api/transacciones/:id/voucher`).
+2. **Habilitación de Confirmación**: El botón **"Confirmar Pago Correcto"** (`POST /api/transacciones/:id/confirm`) está estrictamente condicionado a que la contraparte ya haya subido su comprobante (`contraparteVoucher !== null`). Si no lo ha hecho, se muestra un banner de advertencia animando a esperar. Esto previene liberaciones accidentales de fondos antes de verificar el recibo.
+3. **Mecanismo de Disputa**: El botón **"Abrir Disputa"** permanece habilitado e interactivo en todo momento si surge algún inconveniente, y cuenta con un **Modal de Confirmación** para evitar aperturas accidentales.
