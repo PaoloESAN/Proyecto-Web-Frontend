@@ -1,6 +1,7 @@
 export interface TransaccionCreateRequest {
   ofertaId: number;
   montoOperacion: number;
+  metodoPagoCompradorId: number;
 }
 
 export interface TransaccionCreateResponse {
@@ -10,6 +11,7 @@ export interface TransaccionCreateResponse {
     ofertaId: number;
     usuarioCompradorId: number;
     usuarioVendedorId: number;
+    metodoPagoCompradorId: number;
     montoOperacion: number;
     tipoCambioAplicado: number;
     estado: "Pendiente";
@@ -69,6 +71,23 @@ export interface TransaccionDetailResponse {
     nombreTitular: string;
     tipoMoneda: string;
   };
+  metodoPagoComprador?: {
+    banco: string;
+    numeroCuenta: string;
+    nombreTitular: string;
+    tipoMoneda: string;
+  } | null;
+  comprobantes?: ComprobanteDetail[];
+  confirmadoComprador: boolean;
+  confirmadoVendedor: boolean;
+  yaCalificado: boolean;
+}
+
+export interface ComprobanteDetail {
+  comprobanteId: number;
+  usuarioId: number;
+  imagenUrl: string;
+  fechaSubida: string;
 }
 
 export interface MensajeChatResponse {
@@ -82,7 +101,9 @@ export interface MensajeChatResponse {
 export interface ConfirmReceiptResponse {
   mensaje: string;
   transaccionId: number;
-  estado: "Finalizado";
+  estado: string;
+  confirmadoComprador: boolean;
+  confirmadoVendedor: boolean;
   fechaActualizacion: string;
 }
 
