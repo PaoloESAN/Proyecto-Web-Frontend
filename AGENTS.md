@@ -2,7 +2,7 @@
 
 ## 1. Visión General del Proyecto
 
-Este proyecto es la plataforma FinTech de intercambio de divisas P2P (Peer-to-Peer). Permite a los usuarios realizar operaciones de compra/venta de dinero fiat directamente, eliminando intermediarios bancarios tradicionales. La aplicación facilita la publicación de ofertas, el emparejamiento automático (matching), la gestión del flujo de transacciones (congelamiento de fondos, chat en tiempo real, carga de comprobantes), calificaciones y resolución de disputas mediante un panel de administración.
+Este proyecto es la plataforma FinTech de intercambio de divisas P2P (Peer-to-Peer). Permite a los usuarios realizar operaciones de compra/venta de dinero fiat directamente, eliminando intermediarios bancarios tradicionales. La aplicación actúa como un intermediario puramente informativo para facilitar la publicación de ofertas, el emparejamiento automático (matching), el chat en tiempo real, el intercambio de datos bancarios para transferencias directas P2P (externas a la app), la carga de comprobantes y la resolución de disputas mediante un panel de administración.
 
 > [!IMPORTANT]
 > Toda la persistencia de datos y lógica de negocio central (reglas de transacciones, límites y flujos) reside en el backend (.NET Core Web API). El Frontend debe integrarse exclusivamente usando los endpoints y el stack de comunicación provistos (REST + SignalR).
@@ -45,15 +45,20 @@ Para el desarrollo y mantenimiento del frontend, el agente debe dominar y aplica
 
 ## 3. Reglas de Negocio Críticas
 
+- **Rol Intermediario P2P (Sin Custodia de Fondos)**: La aplicación no almacena, recibe ni custodia dinero. Las transferencias bancarias se realizan de forma externa y directa entre los usuarios de banco a banco (P2P). La app actúa únicamente como facilitador para mostrar la información bancaria de destino/recepción y los comprobantes de pago correspondientes.
 - **Límites de Oferta**: Una oferta tiene un `montoTotal` (inventario del usuario) y límites por transacción (`montoMinimo` y `montoMaximo`). El monto mínimo NUNCA puede superar al máximo.
 - **Seguridad Transaccional**: El flujo de intercambio bloquea la edición/cancelación. Si una oferta tiene transacciones en estado `Pendiente`, `Pagado` o `Disputa`, no puede ser modificada (`PUT`) ni cancelada/eliminada (`DELETE`).
+- **Flujo de Ofertas y Gestión ("Mis Ofertas")**:
+  - Cada oferta en estado `"En Proceso"` se asocia con a lo más una transacción/solicitud activa (el emparejamiento es directo de 1 a 1).
+  - En la lista de ofertas del usuario (`MyOffersScreen`), se ocultan las ofertas en estado `"Finalizada"`, mostrando únicamente las ofertas con estado `"Activa"` y `"En Proceso"`.
+  - La edición y eliminación de una oferta solo está permitida si está en estado `"Activa"`. El flujo se realiza haciendo clic sobre la tarjeta de la oferta para abrir un modal de edición. Dicho modal contiene el botón de "Eliminar Oferta", el cual solicita confirmación a través de un diálogo adicional.
 - **Ciclo de Transacciones (Doble Confirmación)**:
   1. `Pendiente`: Comprador inicia la transacción seleccionando su cuenta de recepción. Ambos participantes ven sus cuentas cruzadas.
   2. `Pagado` / `Confirmación Parcial`: Ambos participantes deben realizar sus transferencias cruzadas y subir sus respectivos comprobantes de pago (`POST /api/transacciones/:id/voucher`).
   3. `Finalizado` o `Disputa`: Ambos participantes deben verificar el comprobante de la contraparte y presionar "Confirmar Pago Correcto" (`POST /api/transacciones/:id/confirm`). Solo cuando ambos confirman (`confirmadoComprador == true` y `confirmadoVendedor == true`), la transacción pasa a estado `Finalizado`. Cualquiera de las partes puede abrir un conflicto (`Disputa`) antes de confirmar.
-- **Resolución de Disputas**: Exclusivo para administradores. La resolución es binaria:
-  - **A favor del comprador**: La transacción se cambia a estado `Cancelado` y la oferta vuelve a estar `Activa` (los fondos vuelven al vendedor).
-  - **A favor del vendedor**: La transacción se cambia a estado `Finalizado` (los fondos quedan liquidados).
+- **Resolución de Disputas**: Exclusivo para administradores. La resolución es binaria en cuanto al estado informativo de la transacción dentro del sistema:
+  - **A favor del comprador**: La transacción se cambia a estado `Cancelado` y la oferta vuelve a estar `Activa` (disponible para recibir solicitudes de intercambio).
+  - **A favor del vendedor**: La transacción se cambia a estado `Finalizado` (la transacción se marca como completada de forma definitiva en el sistema).
 - **Calificación del Usuario**: Cada usuario posee un atributo `calificacion` (promedio del 1.00 al 5.00) en la tabla `usuarios`. Este promedio se actualiza de forma automática cada vez que otro usuario registra una nueva calificación para él (`POST /api/calificaciones`).
 
 ---
