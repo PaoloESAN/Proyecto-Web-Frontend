@@ -18,7 +18,10 @@ export default defineNuxtPlugin(() => {
         }
       }
     },
-    onResponseError({ response }) {
+    onResponseError({ response, options }) {
+      const opts = options as any;
+      if (opts.ignoreGlobalErrors) return;
+
       if (response.status === 401) {
         const authStore = useAuthStore();
         authStore.logout();

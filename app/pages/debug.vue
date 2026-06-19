@@ -181,7 +181,10 @@ async function handleLogout() {
           Panel de Administración
         </h2>
         <p class="text-xs text-neutral-500 dark:text-neutral-400">Tienes permisos de administrador. Accede a las herramientas de gestión.</p>
-        <UButton label="Gestionar Usuarios" color="primary" icon="i-lucide-users" @click="navigateTo('/admin/users')" />
+        <div class="flex gap-3">
+          <UButton label="Gestionar Usuarios" color="primary" icon="i-lucide-users" @click="navigateTo('/admin/users')" />
+          <UButton label="Gestionar Disputas" color="error" variant="soft" icon="i-lucide-scale" @click="navigateTo('/admin/disputas')" />
+        </div>
       </section>
 
       <!-- Configurador de Parámetros de Prueba -->
