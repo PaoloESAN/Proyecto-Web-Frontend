@@ -112,7 +112,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 flex overflow-hidden">
+  <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 flex flex-col">
+    <header class="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
+      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <h1 class="text-xl font-bold">Admin - Disputas</h1>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">Administrador</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-neutral-500">{{ authStore.usuario?.nombres }}</span>
+          <UButton label="Panel" color="neutral" variant="ghost" size="sm" icon="i-lucide-arrow-left" @click="navigateTo('/debug')" />
+        </div>
+      </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
     <!-- Sidebar -->
     <div class="w-[380px] shrink-0 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden">
       <div class="p-5 border-b border-neutral-100 dark:border-neutral-800">
@@ -324,6 +338,7 @@ onMounted(() => {
         <UIcon name="i-lucide-arrow-left-from-line" class="size-10 mx-auto mb-3" />
         <p class="text-sm font-medium">Select a dispute to review</p>
         <p class="text-xs mt-1">Choose a case from the sidebar to begin investigation</p>
+      </div>
       </div>
     </div>
   </div>
