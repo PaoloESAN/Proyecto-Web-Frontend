@@ -473,12 +473,7 @@ function onVoucherSelected(e: Event) {
   }
 
   voucherFile.value = file;
-
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    voucherPreview.value = ev.target?.result as string;
-  };
-  reader.readAsDataURL(file);
+  voucherPreview.value = URL.createObjectURL(file);
 }
 
 function removeVoucher() {
