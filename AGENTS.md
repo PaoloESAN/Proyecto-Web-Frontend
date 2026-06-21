@@ -495,6 +495,33 @@ export interface ErrorResponse {
     ```
   - `400 Bad Request` / `401 Unauthorized` / `403 Forbidden`.
 
+#### `GET /api/ofertas/usuario`
+
+- **Requiere Auth** (Muestra las ofertas del usuario autenticado en estado "Activa" o "En Proceso")
+- **Respuestas**:
+  - `200 OK`: Array de ofertas propias del usuario.
+    ```typescript
+    export type UsuarioOfertasResponse = {
+      ofertaId: number;
+      tipoOperacion: "Compra" | "Venta";
+      moneda: string;
+      montoTotal: number;
+      montoMinimo: number;
+      montoMaximo: number;
+      tipoCambio: number;
+      estado: string; // "Activa" | "En Proceso"
+      fechaPublicacion: string;
+      metodoPago: {
+        metodoPagoId: number;
+        banco: string;
+        nombreTitular: string;
+        numeroCuenta: string;
+        tipoMoneda: string;
+      } | null;
+    }[];
+    ```
+  - `401 Unauthorized`.
+
 ---
 
 ### D. Transacciones (Transactions)

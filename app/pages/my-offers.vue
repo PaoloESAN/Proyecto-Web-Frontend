@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { GetOffersResponse, OfertaUpdateRequest } from '~/types'
+import type { UsuarioOfertasResponse, OfertaUpdateRequest } from '~/types'
 
 definePageMeta({
   middleware: ['auth']
@@ -8,12 +8,12 @@ definePageMeta({
 const api = useApi()
 const toast = useToast()
 
-const offers = ref<GetOffersResponse['datos']>([])
+const offers = ref<UsuarioOfertasResponse>([])
 const loading = ref(false)
 
 // Edit modal state
 const editModalOpen = ref(false)
-const editingOffer = ref<GetOffersResponse['datos'][number] | null>(null)
+const editingOffer = ref<UsuarioOfertasResponse[number] | null>(null)
 const editForm = reactive({
   montoTotal: 0,
   montoMinimo: 0,
@@ -24,14 +24,14 @@ const saving = ref(false)
 
 // Cancel confirmation modal state
 const confirmCancelOpen = ref(false)
-const cancellingOffer = ref<GetOffersResponse['datos'][number] | null>(null)
+const cancellingOffer = ref<UsuarioOfertasResponse[number] | null>(null)
 const deleting = ref(false)
 
 async function fetchMyOffers() {
   loading.value = true
   try {
-    const res = await api<GetOffersResponse>('/api/ofertas/mis-ofertas')
-    offers.value = res.datos ?? []
+    const res = await api<UsuarioOfertasResponse>('/api/ofertas/usuario')
+    offers.value = res ?? []
   } catch {
     toast.add({ title: 'Error', description: 'No se pudieron cargar tus ofertas', color: 'error', icon: 'i-lucide-alert-circle' })
   } finally {
@@ -39,7 +39,11 @@ async function fetchMyOffers() {
   }
 }
 
-function abrirEditar(item: GetOffersResponse['datos'][number]) {
+function abrirEditar(item: UsuarioOfertasResponse[number]) {
+  if (item.estado !== 'Activa') {
+    toast.add({ title: 'Acción no permitida', description: 'Solo puedes editar ofertas en estado Activa.', color: 'warning', icon: 'i-lucide-alert-triangle' })
+    return
+  }
   editingOffer.value = item
   editForm.montoTotal = item.montoTotal
   editForm.montoMinimo = item.montoMinimo
@@ -73,7 +77,11 @@ async function guardarEdicion() {
   }
 }
 
-function confirmarCancelar(item: GetOffersResponse['datos'][number]) {
+function confirmarCancelar(item: UsuarioOfertasResponse[number]) {
+  if (item.estado !== 'Activa') {
+    toast.add({ title: 'Acción no permitida', description: 'Solo puedes cancelar ofertas en estado Activa.', color: 'warning', icon: 'i-lucide-alert-triangle' })
+    return
+  }
   cancellingOffer.value = item
   confirmCancelOpen.value = true
 }
@@ -134,7 +142,11 @@ onMounted(fetchMyOffers)
         <div
           v-for="item in offers"
           :key="item.ofertaId"
-          class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5"
+          :class="[
+            'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 transition-all',
+            item.estado === 'Activa' ? 'cursor-pointer hover:border-primary-500/50 hover:shadow-sm' : 'opacity-85'
+          ]"
+          @click="item.estado === 'Activa' ? abrirEditar(item) : null"
         >
           <div class="flex items-start justify-between mb-3">
             <div class="flex items-center gap-2">
@@ -166,19 +178,18 @@ onMounted(fetchMyOffers)
           <div class="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-neutral-800">
             <div class="flex items-center gap-2 text-sm">
               <UIcon name="i-lucide-building" class="size-4 text-neutral-400" />
-              <span>{{ item.metodoPago.banco }}</span>
+              <span>{{ item.metodoPago?.banco ?? 'Sin banco asignado' }}</span>
             </div>
-            <div class="flex gap-2">
-              <UButton label="Editar" color="primary" icon="i-lucide-pencil" size="sm" @click="abrirEditar(item)" />
-              <UButton label="Cancelar" color="error" variant="outline" icon="i-lucide-x-circle" size="sm" @click="confirmarCancelar(item)" />
-            </div>
+            <UBadge :color="item.estado === 'Activa' ? 'primary' : 'warning'" variant="subtle" size="sm">
+              {{ item.estado }}
+            </UBadge>
           </div>
         </div>
       </div>
     </main>
 
     <!-- Edit Modal -->
-    <UModal v-model:open="editModalOpen" title="Editar Oferta" description="Modifica los campos que deseas actualizar.">
+    <UModal v-model:open="editModalOpen" title="Editar Oferta" description="Modifica los campos que deseas actualizar o elimina la oferta.">
       <template #body>
         <div class="space-y-4">
           <UFormField label="Monto Total" required>
@@ -196,8 +207,13 @@ onMounted(fetchMyOffers)
         </div>
       </template>
       <template #footer="{ close }">
-        <UButton label="Cancelar" color="neutral" variant="outline" @click="close" />
-        <UButton label="Guardar cambios" color="primary" :loading="saving" @click="guardarEdicion" />
+        <div class="flex items-center justify-between w-full">
+          <UButton label="Eliminar Oferta" color="error" variant="outline" icon="i-lucide-trash-2" @click="() => { close(); if (editingOffer) confirmarCancelar(editingOffer); }" />
+          <div class="flex gap-2">
+            <UButton label="Cancelar" color="neutral" variant="outline" @click="close" />
+            <UButton label="Guardar cambios" color="primary" :loading="saving" @click="guardarEdicion" />
+          </div>
+        </div>
       </template>
     </UModal>
 
