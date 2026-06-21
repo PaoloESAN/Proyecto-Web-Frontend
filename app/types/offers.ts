@@ -114,3 +114,22 @@ export interface OfertaDetalleResponse {
     calificacion: number;
   } | null;
 }
+
+export type UsuarioOfertasResponse = {
+  ofertaId: number;
+  tipoOperacion: "Compra" | "Venta";
+  moneda: string;
+  montoTotal: number;
+  montoMinimo: number;
+  montoMaximo: number;
+  tipoCambio: number;
+  estado: string; // "Activa" | "En Proceso"
+  fechaPublicacion: string;
+  metodoPago: {
+    metodoPagoId: number;
+    banco: string;
+    nombreTitular: string;
+    numeroCuenta: string;
+    tipoMoneda: string;
+  } | null;
+}[];
