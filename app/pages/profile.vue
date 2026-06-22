@@ -16,6 +16,7 @@ definePageMeta({
 
 const toast = useToast()
 const api = useApi()
+const authStore = useAuthStore()
 
 const profile = ref<UserProfileResponse | null>(null)
 const metodosPago = ref<MetodoPagoResponse[]>([])
@@ -27,6 +28,7 @@ async function fetchProfile() {
   try {
     profile.value = await api<UserProfileResponse>('/api/users/profile')
     profileState.nombres = profile.value.nombres
+    profileState.apellidos = profile.value.apellidos
   } catch {
     toast.add({ title: 'Error', description: 'No se pudo cargar el perfil', color: 'error', icon: 'i-lucide-alert-circle' })
   } finally {
@@ -45,39 +47,100 @@ async function fetchMetodosPago() {
   }
 }
 
-const editingProfile = ref(false)
+const editProfileModalOpen = ref(false)
 const savingProfile = ref(false)
 
 const profileSchema = z.object({
-  nombres: z.string().min(1, 'El nombre es requerido').max(100, 'Máximo 100 caracteres')
+  nombres: z.string().min(1, 'El nombre es requerido').max(100, 'Máximo 100 caracteres'),
+  apellidos: z.string().min(1, 'El apellido es requerido').max(100, 'Máximo 100 caracteres')
 })
 
 type ProfileSchema = z.output<typeof profileSchema>
-const profileState = reactive<Partial<ProfileSchema>>({ nombres: '' })
+const profileState = reactive<Partial<ProfileSchema>>({ nombres: '', apellidos: '' })
+
+const fileInput = ref<HTMLInputElement | null>(null)
+const tempAvatarUrl = ref<string | null>(null)
+const selectedFile = ref<File | null>(null)
 
 async function onSubmitProfile(event: FormSubmitEvent<ProfileSchema>) {
   savingProfile.value = true
   try {
+    const formData = new FormData()
+    formData.append('nombres', event.data.nombres)
+    formData.append('apellidos', event.data.apellidos)
+    if (selectedFile.value) {
+      formData.append('fotoPerfil', selectedFile.value)
+    }
+
     const res = await api<UpdateProfileResponse>('/api/users/profile', {
       method: 'PUT',
-      body: { nombres: event.data.nombres }
+      body: formData
     })
+
     toast.add({ title: 'Perfil actualizado', color: 'success', icon: 'i-lucide-circle-check' })
     if (profile.value) {
       profile.value.nombres = res.usuario.nombres
+      profile.value.apellidos = res.usuario.apellidos
+      profile.value.fotoPerfilUrl = res.usuario.fotoPerfilUrl
     }
-    editingProfile.value = false
-  } catch {
-    toast.add({ title: 'Error', description: 'No se pudo actualizar el perfil', color: 'error', icon: 'i-lucide-alert-circle' })
+    if (authStore.usuario) {
+      authStore.usuario.nombres = res.usuario.nombres
+      authStore.usuario.apellidos = res.usuario.apellidos
+      authStore.usuario.fotoPerfilUrl = res.usuario.fotoPerfilUrl
+    }
+    editProfileModalOpen.value = false
+  } catch (error: any) {
+    const errorMsg = error.data?.mensaje || error.data?.message || 'No se pudo actualizar el perfil'
+    toast.add({ title: 'Error', description: errorMsg, color: 'error', icon: 'i-lucide-alert-circle' })
   } finally {
     savingProfile.value = false
   }
 }
 
-function cancelEdit() {
-  editingProfile.value = false
+function openEditProfile() {
   if (profile.value) {
     profileState.nombres = profile.value.nombres
+    profileState.apellidos = profile.value.apellidos
+  }
+  tempAvatarUrl.value = authStore.avatarUrl
+  selectedFile.value = null
+  editProfileModalOpen.value = true
+}
+
+function triggerFileInput() {
+  fileInput.value?.click()
+}
+
+function onFileChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files || input.files.length === 0) return
+  const file = input.files[0]
+  
+  const validTypes = ['image/jpeg', 'image/png']
+  if (!validTypes.includes(file.type)) {
+    toast.add({ title: 'Error', description: 'La imagen debe ser JPG o PNG', color: 'error', icon: 'i-lucide-alert-circle' })
+    return
+  }
+  
+  const maxSize = 5 * 1024 * 1024 // 5MB
+  if (file.size > maxSize) {
+    toast.add({ title: 'Error', description: 'La imagen debe pesar menos de 5MB', color: 'error', icon: 'i-lucide-alert-circle' })
+    return
+  }
+  
+  selectedFile.value = file
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    tempAvatarUrl.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+}
+
+function removeTempAvatar() {
+  tempAvatarUrl.value = null
+  selectedFile.value = null
+  if (fileInput.value) {
+    fileInput.value.value = ''
   }
 }
 
@@ -86,6 +149,7 @@ const savingAccount = ref(false)
 const deleteConfirmOpen = ref(false)
 const deletingAccountId = ref<number | null>(null)
 const deletingAccountLabel = ref('')
+const editingAccountId = ref<number | null>(null)
 
 const accountSchema = z.object({
   banco: z.string().min(1, 'El banco es requerido'),
@@ -105,22 +169,54 @@ const monedas = [
   { label: 'PEN - Sol Peruano', value: 'PEN' },
 ]
 
+function openAddAccount() {
+  editingAccountId.value = null
+  accountState.banco = ''
+  accountState.numeroCuenta = ''
+  accountState.nombreTitular = ''
+  accountState.tipoMoneda = 'USD'
+  accountModalOpen.value = true
+}
+
+function openEditAccount(cuenta: MetodoPagoResponse) {
+  editingAccountId.value = cuenta.metodoPagoId
+  accountState.banco = cuenta.banco
+  accountState.numeroCuenta = cuenta.numeroCuenta
+  accountState.nombreTitular = cuenta.nombreTitular
+  accountState.tipoMoneda = cuenta.tipoMoneda
+  accountModalOpen.value = true
+}
+
 async function onSubmitAccount(event: FormSubmitEvent<AccountSchema>) {
   savingAccount.value = true
   try {
-    await api('/api/users/metodos-pago', {
-      method: 'POST',
-      body: event.data
-    })
-    toast.add({ title: 'Cuenta agregada', color: 'success', icon: 'i-lucide-circle-check' })
+    if (editingAccountId.value) {
+      await api(`/api/users/metodos-pago/${editingAccountId.value}`, {
+        method: 'PUT',
+        body: event.data
+      })
+      toast.add({ title: 'Cuenta actualizada', color: 'success', icon: 'i-lucide-circle-check' })
+    } else {
+      await api('/api/users/metodos-pago', {
+        method: 'POST',
+        body: event.data
+      })
+      toast.add({ title: 'Cuenta agregada', color: 'success', icon: 'i-lucide-circle-check' })
+    }
     accountModalOpen.value = false
+    editingAccountId.value = null
     accountState.banco = ''
     accountState.numeroCuenta = ''
     accountState.nombreTitular = ''
     accountState.tipoMoneda = 'USD'
     await fetchMetodosPago()
   } catch {
-    toast.add({ title: 'Error', description: 'No se pudo agregar la cuenta', color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({
+      title: 'Error',
+      description: editingAccountId.value ? 'No se pudo actualizar la cuenta' : 'No se pudo agregar la cuenta',
+      color: 'error',
+      icon: 'i-lucide-alert-circle'
+    })
   } finally {
     savingAccount.value = false
   }
@@ -128,7 +224,7 @@ async function onSubmitAccount(event: FormSubmitEvent<AccountSchema>) {
 
 function confirmDelete(cuenta: MetodoPagoResponse) {
   deletingAccountId.value = cuenta.metodoPagoId
-  deletingAccountLabel.value = `${cuenta.banco} (**** ${cuenta.numeroCuenta.slice(-4)})`
+  deletingAccountLabel.value = `${cuenta.banco} (${cuenta.numeroCuenta})`
   deleteConfirmOpen.value = true
 }
 
@@ -145,37 +241,6 @@ async function executeDelete() {
   }
 }
 
-const verifyModalOpen = ref(false)
-const uploadingKyc = ref(false)
-
-const kycSchema = z.object({
-  dniFrontal: z.instanceof(File, { message: 'Debes seleccionar el DNI frontal' }),
-  dniPosterior: z.instanceof(File, { message: 'Debes seleccionar el DNI posterior' })
-})
-
-type KycSchema = z.output<typeof kycSchema>
-const kycState = reactive<Partial<KycSchema>>({})
-
-async function onSubmitKyc(event: FormSubmitEvent<KycSchema>) {
-  uploadingKyc.value = true
-  try {
-    const formData = new FormData()
-    formData.append('dniFrontal', event.data.dniFrontal)
-    formData.append('dniPosterior', event.data.dniPosterior)
-    const res = await api<VerifyIdentityResponse>('/api/users/verify-identity', {
-      method: 'POST',
-      body: formData
-    })
-    toast.add({ title: 'Identidad verificada', description: res.mensaje, color: 'success', icon: 'i-lucide-circle-check' })
-    verifyModalOpen.value = false
-    profile.value!.esVerificado = true
-  } catch {
-    toast.add({ title: 'Error', description: 'No se pudo verificar la identidad', color: 'error', icon: 'i-lucide-alert-circle' })
-  } finally {
-    uploadingKyc.value = false
-  }
-}
-
 onMounted(() => {
   Promise.all([fetchProfile(), fetchMetodosPago()])
 })
@@ -189,12 +254,19 @@ onMounted(() => {
           <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 flex flex-col items-center text-center shadow-sm space-y-4">
             <div class="flex items-center justify-center">
               <USkeleton v-if="loadingProfile" class="size-24 rounded-full" />
-              <UAvatar v-else :alt="profile?.nombres ?? '?'" :text="profile?.nombres?.charAt(0).toUpperCase() ?? '?'" size="2xl" class="mx-auto" />
+              <UAvatar
+                v-else
+                :src="authStore.avatarUrl || undefined"
+                :alt="profile?.nombres ?? '?'"
+                :text="profile?.nombres?.charAt(0).toUpperCase() ?? '?'"
+                size="2xl"
+                class="mx-auto"
+              />
             </div>
 
             <div>
               <USkeleton v-if="loadingProfile" class="h-5 w-40 mb-1 mx-auto" />
-              <h2 v-else class="text-lg font-bold text-highlighted">{{ profile?.nombres }}</h2>
+              <h2 v-else class="text-lg font-bold text-highlighted">{{ profile?.nombres }} {{ profile?.apellidos }}</h2>
 
               <USkeleton v-if="loadingProfile" class="h-4 w-48 mb-1 mx-auto" />
               <p v-else class="text-sm text-muted">{{ profile?.correo }}</p>
@@ -223,30 +295,16 @@ onMounted(() => {
                 Pendiente
               </UBadge>
             </div>
-            <UButton v-if="!profile?.esVerificado" label="Verificar identidad" color="primary" variant="soft" icon="i-lucide-id-card" block @click="verifyModalOpen = true" />
+            <UButton v-if="!profile?.esVerificado" label="Verificar identidad" color="primary" variant="soft" icon="i-lucide-id-card" block @click="navigateTo('/verify-identity')" class="cursor-pointer" />
           </div>
 
-          <div v-if="editingProfile" class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 shadow-sm space-y-4">
-            <h3 class="font-semibold text-highlighted">Editar Perfil</h3>
-            <UForm :schema="profileSchema" :state="profileState" class="space-y-4" @submit="onSubmitProfile">
-              <UFormField name="nombres" label="Nombre completo" required>
-                <UInput v-model="profileState.nombres" class="w-full" />
-              </UFormField>
-
-              <div class="flex justify-end gap-3 pt-2">
-                <UButton label="Cancelar" color="neutral" variant="outline" @click="cancelEdit" />
-                <UButton type="submit" label="Guardar" color="primary" :loading="savingProfile" />
-              </div>
-            </UForm>
-          </div>
-
-          <UButton v-else label="Editar Perfil" color="neutral" variant="outline" icon="i-lucide-pencil" block @click="editingProfile = true" />
+          <UButton label="Editar Perfil" color="neutral" variant="outline" icon="i-lucide-pencil" block @click="openEditProfile" class="cursor-pointer" />
         </aside>
 
         <section class="space-y-4">
           <div class="flex items-center justify-between">
             <h2 class="text-lg font-bold text-highlighted">Mis Cuentas Bancarias</h2>
-            <UButton label="Agregar cuenta" color="primary" icon="i-lucide-plus" @click="accountModalOpen = true" />
+            <UButton label="Agregar cuenta" color="primary" icon="i-lucide-plus" @click="openAddAccount" />
           </div>
 
           <div v-if="loadingAccounts" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -266,17 +324,20 @@ onMounted(() => {
                       <p class="text-xs text-neutral-500 dark:text-neutral-400 truncate">{{ cuenta.nombreTitular }}</p>
                     </div>
                   </div>
-                  <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs" class="shrink-0 rounded-full cursor-pointer" @click="confirmDelete(cuenta)" />
+                  <div class="flex items-center gap-1 shrink-0">
+                    <UButton icon="i-lucide-pencil" color="neutral" variant="ghost" size="xs" class="rounded-full cursor-pointer" @click="openEditAccount(cuenta)" />
+                    <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs" class="shrink-0 rounded-full cursor-pointer" @click="confirmDelete(cuenta)" />
+                  </div>
                 </div>
                 <div class="flex items-center justify-between mt-auto pt-4 border-t border-neutral-100 dark:border-neutral-800">
-                  <span class="text-lg font-bold tracking-widest text-neutral-900 dark:text-white">**** {{ cuenta.numeroCuenta.slice(-4) }}</span>
-                  <UBadge color="neutral" variant="soft" size="sm">{{ cuenta.tipoMoneda }}</UBadge>
+                  <span class="text-sm font-semibold text-neutral-900 dark:text-white break-all tracking-normal">{{ cuenta.numeroCuenta }}</span>
+                  <UBadge color="neutral" variant="soft" size="sm" class="shrink-0 ml-2">{{ cuenta.tipoMoneda }}</UBadge>
                 </div>
               </div>
             </div>
           </template>
 
-          <div v-else class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 cursor-pointer hover:border-primary-500/50 hover:shadow-sm transition-all" @click="accountModalOpen = true">
+          <div v-else class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 cursor-pointer hover:border-primary-500/50 hover:shadow-sm transition-all" @click="openAddAccount">
             <div class="flex flex-col items-center justify-center py-8 text-center">
               <div class="size-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-3">
                 <UIcon name="i-lucide-plus" class="size-6 text-neutral-500 dark:text-neutral-400" />
@@ -289,7 +350,7 @@ onMounted(() => {
       </div>
     </main>
 
-    <UModal v-model:open="accountModalOpen" title="Agregar cuenta bancaria" description="Ingresa los datos de tu cuenta para recibir pagos.">
+    <UModal v-model:open="accountModalOpen" :title="editingAccountId ? 'Editar cuenta bancaria' : 'Agregar cuenta bancaria'" :description="editingAccountId ? 'Actualiza los datos de tu cuenta bancaria.' : 'Ingresa los datos de tu cuenta para recibir pagos.'">
       <template #body>
         <UForm id="account-form" :schema="accountSchema" :state="accountState" class="space-y-4" @submit="onSubmitAccount">
           <UFormField name="banco" label="Banco" required>
@@ -308,7 +369,7 @@ onMounted(() => {
       </template>
       <template #footer="{ close }">
         <UButton label="Cancelar" color="neutral" variant="outline" @click="close" />
-        <UButton type="submit" form="account-form" label="Guardar cuenta" :loading="savingAccount" />
+        <UButton type="submit" form="account-form" :label="editingAccountId ? 'Guardar cambios' : 'Guardar cuenta'" :loading="savingAccount" />
       </template>
     </UModal>
 
@@ -328,20 +389,55 @@ onMounted(() => {
       </template>
     </UModal>
 
-    <UModal v-model:open="verifyModalOpen" title="Verificar identidad" description="Sube las imágenes de tu DNI (anverso y reverso) para verificar tu identidad.">
+    <UModal v-model:open="editProfileModalOpen" title="Editar Perfil" description="Actualiza tus datos personales.">
       <template #body>
-        <UForm id="kyc-form" :schema="kycSchema" :state="kycState" class="space-y-4" @submit="onSubmitKyc">
-          <UFormField name="dniFrontal" label="DNI Frontal" required>
-            <UFileUpload v-model="kycState.dniFrontal" accept="image/jpeg,image/png" :max-size="5 * 1024 * 1024" variant="area" />
+        <UForm id="edit-profile-form" :schema="profileSchema" :state="profileState" class="space-y-4" @submit="onSubmitProfile">
+          <!-- Foto de Perfil Upload -->
+          <div class="flex flex-col items-center gap-3 mb-4">
+            <div class="relative group cursor-pointer" @click="triggerFileInput">
+              <UAvatar
+                :src="tempAvatarUrl || undefined"
+                :alt="profileState.nombres || '?'"
+                :text="profileState.nombres?.charAt(0).toUpperCase() || '?'"
+                size="3xl"
+                class="size-24 rounded-full border-2 border-neutral-200 dark:border-neutral-800"
+              />
+              <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <UIcon name="i-lucide-camera" class="size-6 text-white" />
+              </div>
+            </div>
+            <div v-if="tempAvatarUrl" class="flex justify-center">
+              <UButton
+                type="button"
+                label="Eliminar foto"
+                size="xs"
+                color="error"
+                variant="ghost"
+                icon="i-lucide-trash-2"
+                @click="removeTempAvatar"
+              />
+            </div>
+            <input
+              ref="fileInput"
+              type="file"
+              class="hidden"
+              accept="image/png, image/jpeg"
+              @change="onFileChange"
+            />
+            <span class="text-[10px] text-neutral-400 dark:text-neutral-500">JPG o PNG, máx 5MB</span>
+          </div>
+
+          <UFormField name="nombres" label="Nombre(s)" required>
+            <UInput v-model="profileState.nombres" class="w-full" />
           </UFormField>
-          <UFormField name="dniPosterior" label="DNI Posterior" required>
-            <UFileUpload v-model="kycState.dniPosterior" accept="image/jpeg,image/png" :max-size="5 * 1024 * 1024" variant="area" />
+          <UFormField name="apellidos" label="Apellido(s)" required>
+            <UInput v-model="profileState.apellidos" class="w-full" />
           </UFormField>
         </UForm>
       </template>
       <template #footer="{ close }">
         <UButton label="Cancelar" color="neutral" variant="outline" @click="close" />
-        <UButton type="submit" form="kyc-form" label="Verificar" :loading="uploadingKyc" />
+        <UButton type="submit" form="edit-profile-form" label="Guardar" :loading="savingProfile" />
       </template>
     </UModal>
   </div>

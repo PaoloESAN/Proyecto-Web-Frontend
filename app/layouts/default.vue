@@ -50,8 +50,10 @@ async function handleLogout() {
 }
 
 // Menú desplegable del usuario
-const userItems = computed<DropdownMenuItem[][]>(() => [
-  [
+const userItems = computed<DropdownMenuItem[][]>(() => {
+  const items: DropdownMenuItem[][] = [];
+
+  const userActions: DropdownMenuItem[] = [
     {
       label: "Mi Perfil",
       icon: "i-lucide-user",
@@ -62,13 +64,19 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
       icon: "i-lucide-bell",
       to: "/alerts",
     },
-    {
+  ];
+
+  if (!authStore.usuario?.esVerificado) {
+    userActions.push({
       label: "Verificar Identidad",
       icon: "i-lucide-shield-check",
       to: "/verify-identity",
-    },
-  ],
-  [
+    });
+  }
+
+  items.push(userActions);
+
+  items.push([
     {
       label: "Apariencia",
       icon: "i-lucide-sun-moon",
@@ -103,8 +111,9 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
         },
       ],
     },
-  ],
-  [
+  ]);
+
+  items.push([
     {
       label: "Cerrar Sesión",
       icon: "i-lucide-log-out",
@@ -112,8 +121,10 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
         handleLogout();
       },
     },
-  ],
-]);
+  ]);
+
+  return items;
+});
 </script>
 
 <template>
@@ -180,6 +191,7 @@ const userItems = computed<DropdownMenuItem[][]>(() => [
           >
             <template #leading>
               <UAvatar
+                :src="authStore.avatarUrl || undefined"
                 :alt="authStore.usuario?.nombres || '?'"
                 :text="authStore.usuario?.nombres?.charAt(0).toUpperCase() || '?'"
                 size="sm"

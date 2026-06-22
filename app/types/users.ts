@@ -8,10 +8,12 @@ export interface UserProfileResponse {
   fechaRegistro: string;
   esVerificado: boolean;
   calificacion: number;
+  fotoPerfilUrl: string | null;
 }
 
 export interface UpdateProfileRequest {
   nombres: string;
+  apellidos?: string;
 }
 
 export interface UpdateProfileResponse {
@@ -22,6 +24,7 @@ export interface UpdateProfileResponse {
     apellidos: string;
     correo: string;
     rol: string;
+    fotoPerfilUrl: string | null;
   };
 }
 

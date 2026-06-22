@@ -105,6 +105,7 @@ export interface ErrorResponse {
         correo: string;
         rol: "Usuario" | "Administrador";
         esVerificado: boolean;
+        fotoPerfilUrl: string | null;
       };
     }
     ```
@@ -136,6 +137,7 @@ export interface ErrorResponse {
         rol: string;
         estado: string; // "Activo"
         esVerificado: boolean;
+        fotoPerfilUrl: string | null;
       };
     }
     ```
@@ -199,19 +201,17 @@ export interface ErrorResponse {
       fechaRegistro: string;
       esVerificado: boolean;
       calificacion: number;
+      fotoPerfilUrl: string | null;
     }
     ```
   - `401 Unauthorized` / `404 Not Found`.
 
 #### `PUT /api/users/profile`
 
-- **Requiere Auth**
-- **Request Body**:
-  ```typescript
-  export interface UpdateProfileRequest {
-    nombres: string;
-  }
-  ```
+- **Requiere Auth** (Multipart/Form-Data)
+- **Request Body** (FormData):
+  - `nombres`: string (Requerido, máx 100)
+  - `fotoPerfil`?: File (Opcional, imagen <= 5MB)
 - **Respuestas**:
   - `200 OK`:
     ```typescript
@@ -223,6 +223,7 @@ export interface ErrorResponse {
         apellidos: string;
         correo: string;
         rol: string;
+        fotoPerfilUrl: string | null;
       };
     }
     ```

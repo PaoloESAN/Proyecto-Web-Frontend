@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { ref, computed } from "vue";
 
 interface Usuario {
   usuarioId: number;
@@ -7,6 +8,7 @@ interface Usuario {
   correo: string;
   rol: "Usuario" | "Administrador";
   esVerificado: boolean;
+  fotoPerfilUrl: string | null;
 }
 
 export const useAuthStore = defineStore("auth", () => {
@@ -15,6 +17,15 @@ export const useAuthStore = defineStore("auth", () => {
 
   const isAuthenticated = computed(() => !!token.value);
   const isAdmin = computed(() => usuario.value?.rol === "Administrador");
+
+  const avatarUrl = computed(() => {
+    if (!usuario.value?.fotoPerfilUrl) return null;
+    if (usuario.value.fotoPerfilUrl.startsWith("http") || usuario.value.fotoPerfilUrl.startsWith("data:")) {
+      return usuario.value.fotoPerfilUrl;
+    }
+    const config = useRuntimeConfig();
+    return `${config.public.apiBase}${usuario.value.fotoPerfilUrl}`;
+  });
 
   function login(
     nuevoToken: string,
@@ -43,6 +54,7 @@ export const useAuthStore = defineStore("auth", () => {
   return {
     token,
     usuario,
+    avatarUrl,
     isAuthenticated,
     isAdmin,
     login,
