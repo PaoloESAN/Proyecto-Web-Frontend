@@ -2,7 +2,8 @@
 import type { UsuarioOfertasResponse, OfertaUpdateRequest } from '~/types'
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth'],
+  title: "Mis Ofertas"
 })
 
 const api = useApi()
@@ -109,14 +110,10 @@ onMounted(fetchMyOffers)
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
-    <header class="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
-      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <h1 class="text-xl font-bold">Mis Ofertas</h1>
-        <UButton label="Volver" color="neutral" variant="ghost" icon="i-lucide-arrow-left" @click="navigateTo('/debug')" />
+    <main class="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      <div class="flex items-center justify-end mb-4">
+        <UButton label="Nueva Oferta" color="primary" icon="i-lucide-plus" @click="navigateTo('/offers/new')" class="font-semibold cursor-pointer" />
       </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-6 py-8 space-y-4">
       <div v-if="loading" class="grid gap-4">
         <div v-for="i in 3" :key="i" class="animate-pulse bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 space-y-3">
           <div class="flex justify-between">

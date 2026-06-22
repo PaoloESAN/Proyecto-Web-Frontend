@@ -4,7 +4,8 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import type { AlertaResponse, AlertaCreateResponse } from '~/types'
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth'],
+  title: "Alertas de Tipo de Cambio"
 })
 
 const toast = useToast()
@@ -80,13 +81,6 @@ onMounted(fetchAlertas)
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
-    <header class="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
-      <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-        <h1 class="text-xl font-bold">Alertas de Tipo de Cambio</h1>
-        <UButton label="Volver" color="neutral" variant="ghost" icon="i-lucide-arrow-left" @click="navigateTo('/debug')" />
-      </div>
-    </header>
-
     <main class="max-w-5xl mx-auto px-6 py-8 space-y-6">
       <div class="flex items-center justify-between">
         <p class="text-sm text-neutral-500">Recibe notificaciones cuando el tipo de cambio alcance el valor deseado.</p>

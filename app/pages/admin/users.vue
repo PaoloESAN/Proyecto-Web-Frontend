@@ -2,7 +2,8 @@
 import type { GetUsersAdminResponse, UpdateUserStatusResponse, ErrorResponse } from '~/types'
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth'],
+  title: "Administración - Usuarios"
 })
 
 const toast = useToast()
@@ -83,19 +84,6 @@ function totalPages() {
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
-    <header class="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
-      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <h1 class="text-xl font-bold">Admin - Usuarios</h1>
-          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">Administrador</span>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="text-sm text-neutral-500">{{ authStore.usuario?.nombres }}</span>
-          <UButton label="Panel" color="neutral" variant="ghost" size="sm" icon="i-lucide-arrow-left" @click="navigateTo('/debug')" />
-        </div>
-      </div>
-    </header>
-
     <main class="max-w-7xl mx-auto px-6 py-8">
       <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
         <div class="p-5 border-b border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">

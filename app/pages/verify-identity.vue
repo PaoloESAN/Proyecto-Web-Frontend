@@ -3,6 +3,8 @@ import type { VerifyIdentityResponse } from '~/types'
 
 definePageMeta({
   middleware: ['auth'],
+  title: "Verificar Identidad",
+  back: "/profile"
 })
 
 const toast = useToast()
@@ -127,30 +129,10 @@ async function submitKyc() {
 
 <template>
   <div
-    class="min-h-dvh bg-linear-to-b from-neutral-50 to-neutral-100 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-50"
+    class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50"
   >
-    <header
-      class="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200/50 dark:border-neutral-800/50 sticky top-0 z-40"
-    >
-      <div
-        class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between"
-      >
-        <div class="flex items-center gap-3">
-          <UButton
-            label="Volver"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-arrow-left"
-            @click="router.back()"
-          />
-          <span class="text-sm font-bold tracking-tight text-neutral-400">/</span>
-          <h1 class="text-lg font-bold tracking-tight">Verificar Identidad</h1>
-        </div>
-      </div>
-    </header>
-
     <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl p-6 shadow-sm space-y-6">
+      <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm space-y-6">
         <!-- Encabezado -->
         <div class="space-y-1">
           <h2 class="text-base font-bold text-neutral-900 dark:text-white">

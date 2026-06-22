@@ -9,6 +9,11 @@ import type {
   VerifyIdentityResponse
 } from '~/types'
 
+definePageMeta({
+  middleware: ['auth'],
+  title: "Mi Perfil"
+})
+
 const toast = useToast()
 const api = useApi()
 
@@ -177,39 +182,32 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-dvh bg-default">
-    <header class="sticky top-0 z-10 bg-elevated border-b border-default">
-      <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-        <h1 class="text-xl font-bold text-highlighted">Mi Perfil</h1>
-        <UButton color="neutral" variant="ghost" icon="i-lucide-arrow-left" label="Volver" @click="navigateTo('/debug')" />
-      </div>
-    </header>
-
+  <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50">
     <main class="max-w-5xl mx-auto px-6 py-8 space-y-8">
       <div class="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8">
         <aside class="space-y-6">
-          <UCard :ui="{ body: 'flex flex-col items-center text-center' }">
-            <template #header>
-              <div class="flex items-center justify-center">
-                <USkeleton v-if="loadingProfile" class="size-24 rounded-full" />
-                <UAvatar v-else :alt="profile?.nombres ?? '?'" :text="profile?.nombres?.charAt(0).toUpperCase() ?? '?'" size="2xl" class="mx-auto" />
-              </div>
-            </template>
-
-            <USkeleton v-if="loadingProfile" class="h-5 w-40 mb-1" />
-            <h2 v-else class="text-lg font-bold text-highlighted">{{ profile?.nombres }}</h2>
-
-            <USkeleton v-if="loadingProfile" class="h-4 w-48 mb-1" />
-            <p v-else class="text-sm text-muted">{{ profile?.correo }}</p>
-
-            <USkeleton v-if="loadingProfile" class="h-4 w-32 mx-auto" />
-            <div v-else class="flex items-center justify-center gap-1.5 text-xs text-amber-500 font-bold mt-1">
-              <UIcon name="i-lucide-star" class="size-3.5 fill-amber-500" />
-              <span>{{ profile?.calificacion?.toFixed(2) ?? '0.00' }} (Calificación)</span>
+          <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 flex flex-col items-center text-center shadow-sm space-y-4">
+            <div class="flex items-center justify-center">
+              <USkeleton v-if="loadingProfile" class="size-24 rounded-full" />
+              <UAvatar v-else :alt="profile?.nombres ?? '?'" :text="profile?.nombres?.charAt(0).toUpperCase() ?? '?'" size="2xl" class="mx-auto" />
             </div>
-          </UCard>
 
-          <UCard :ui="{ body: 'space-y-4' }">
+            <div>
+              <USkeleton v-if="loadingProfile" class="h-5 w-40 mb-1 mx-auto" />
+              <h2 v-else class="text-lg font-bold text-highlighted">{{ profile?.nombres }}</h2>
+
+              <USkeleton v-if="loadingProfile" class="h-4 w-48 mb-1 mx-auto" />
+              <p v-else class="text-sm text-muted">{{ profile?.correo }}</p>
+
+              <USkeleton v-if="loadingProfile" class="h-4 w-32 mx-auto" />
+              <div v-else class="flex items-center justify-center gap-1.5 text-xs text-amber-500 font-bold mt-1">
+                <UIcon name="i-lucide-star" class="size-3.5 fill-amber-500" />
+                <span>{{ profile?.calificacion?.toFixed(2) ?? '0.00' }} (Calificación)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 space-y-4 shadow-sm">
             <div class="flex items-center justify-between">
               <span class="text-xs font-semibold text-muted uppercase tracking-wider">Estado</span>
               <UBadge v-if="profile?.esVerificado" color="success" variant="soft" size="sm">
@@ -226,12 +224,10 @@ onMounted(() => {
               </UBadge>
             </div>
             <UButton v-if="!profile?.esVerificado" label="Verificar identidad" color="primary" variant="soft" icon="i-lucide-id-card" block @click="verifyModalOpen = true" />
-          </UCard>
+          </div>
 
-          <UCard v-if="editingProfile">
-            <template #header>
-              <h3 class="font-semibold text-highlighted">Editar Perfil</h3>
-            </template>
+          <div v-if="editingProfile" class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 shadow-sm space-y-4">
+            <h3 class="font-semibold text-highlighted">Editar Perfil</h3>
             <UForm :schema="profileSchema" :state="profileState" class="space-y-4" @submit="onSubmitProfile">
               <UFormField name="nombres" label="Nombre completo" required>
                 <UInput v-model="profileState.nombres" class="w-full" />
@@ -242,7 +238,7 @@ onMounted(() => {
                 <UButton type="submit" label="Guardar" color="primary" :loading="savingProfile" />
               </div>
             </UForm>
-          </UCard>
+          </div>
 
           <UButton v-else label="Editar Perfil" color="neutral" variant="outline" icon="i-lucide-pencil" block @click="editingProfile = true" />
         </aside>
@@ -259,36 +255,36 @@ onMounted(() => {
 
           <template v-else-if="metodosPago.length > 0">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UCard v-for="cuenta in metodosPago" :key="cuenta.metodoPagoId" :ui="{ body: 'flex flex-col justify-between h-full', root: 'relative' }">
+              <div v-for="cuenta in metodosPago" :key="cuenta.metodoPagoId" class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 flex flex-col justify-between h-full relative shadow-sm">
                 <div class="flex items-start justify-between mb-4">
                   <div class="flex items-center gap-3 min-w-0">
-                    <div class="size-10 rounded-full bg-accented flex items-center justify-center shrink-0">
-                      <UIcon name="i-lucide-account-balance" class="size-5 text-muted" />
+                    <div class="size-10 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
+                      <UIcon name="i-lucide-landmark" class="size-5 text-neutral-500 dark:text-neutral-400" />
                     </div>
                     <div class="min-w-0">
-                      <p class="font-semibold text-sm truncate">{{ cuenta.banco }}</p>
-                      <p class="text-xs text-muted truncate">{{ cuenta.nombreTitular }}</p>
+                      <p class="font-semibold text-sm truncate text-neutral-900 dark:text-white">{{ cuenta.banco }}</p>
+                      <p class="text-xs text-neutral-500 dark:text-neutral-400 truncate">{{ cuenta.nombreTitular }}</p>
                     </div>
                   </div>
-                  <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs" class="shrink-0 rounded-full" @click="confirmDelete(cuenta)" />
+                  <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs" class="shrink-0 rounded-full cursor-pointer" @click="confirmDelete(cuenta)" />
                 </div>
-                <div class="flex items-center justify-between mt-auto">
-                  <span class="text-lg font-bold tracking-widest text-highlighted">**** {{ cuenta.numeroCuenta.slice(-4) }}</span>
+                <div class="flex items-center justify-between mt-auto pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                  <span class="text-lg font-bold tracking-widest text-neutral-900 dark:text-white">**** {{ cuenta.numeroCuenta.slice(-4) }}</span>
                   <UBadge color="neutral" variant="soft" size="sm">{{ cuenta.tipoMoneda }}</UBadge>
                 </div>
-              </UCard>
+              </div>
             </div>
           </template>
 
-          <UCard v-else class="cursor-pointer" @click="accountModalOpen = true">
+          <div v-else class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 cursor-pointer hover:border-primary-500/50 hover:shadow-sm transition-all" @click="accountModalOpen = true">
             <div class="flex flex-col items-center justify-center py-8 text-center">
-              <div class="size-12 rounded-full bg-accented flex items-center justify-center mb-3">
-                <UIcon name="i-lucide-plus" class="size-6 text-muted" />
+              <div class="size-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-3">
+                <UIcon name="i-lucide-plus" class="size-6 text-neutral-500 dark:text-neutral-400" />
               </div>
-              <p class="text-sm font-medium">Vincular nueva cuenta</p>
-              <p class="text-xs text-muted mt-1">Aún no tienes cuentas bancarias vinculadas</p>
+              <p class="text-sm font-medium text-neutral-900 dark:text-white">Vincular nueva cuenta</p>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Aún no tienes cuentas bancarias vinculadas</p>
             </div>
-          </UCard>
+          </div>
         </section>
       </div>
     </main>

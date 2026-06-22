@@ -313,17 +313,15 @@ const isOwnOffer = computed(() => {
           <!-- Fila de Creador y Cuentas (Al principio / arriba) -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <!-- Datos del Creador (Acerca del Anunciante - Izquierda) -->
-            <UCard
-              class="backdrop-blur-md bg-white/90 dark:bg-neutral-900/90 border border-default shadow-xl rounded-2xl"
+            <div
+              class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm rounded-xl p-5"
             >
-              <template #header>
-                <div class="flex items-center gap-2">
-                  <UIcon name="i-lucide-user" class="text-primary size-5" />
-                  <h3 class="font-bold text-highlighted text-sm">
-                    Acerca del Anunciante
-                  </h3>
-                </div>
-              </template>
+              <div class="flex items-center gap-2 pb-4 mb-4 border-b border-neutral-100 dark:border-neutral-800">
+                <UIcon name="i-lucide-user" class="text-primary size-5" />
+                <h3 class="font-bold text-highlighted text-sm">
+                  Acerca del Anunciante
+                </h3>
+              </div>
               <div
                 v-if="offer.usuarioCreador"
                 class="flex flex-col items-center text-center py-2"
@@ -355,20 +353,18 @@ const isOwnOffer = computed(() => {
               <div v-else class="text-center py-8 text-muted text-xs">
                 Información del anunciante no disponible.
               </div>
-            </UCard>
+            </div>
 
             <!-- Datos de Pago vinculados (Método de Cobro P2P - Derecha) -->
-            <UCard
-              class="backdrop-blur-md bg-white/90 dark:bg-neutral-900/90 border border-default shadow-xl rounded-2xl"
+            <div
+              class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm rounded-xl p-5"
             >
-              <template #header>
-                <div class="flex items-center gap-2">
-                  <UIcon name="i-lucide-landmark" class="text-primary size-5" />
-                  <h3 class="font-bold text-highlighted text-sm">
-                    Método de Cobro P2P
-                  </h3>
-                </div>
-              </template>
+              <div class="flex items-center gap-2 pb-4 mb-4 border-b border-neutral-100 dark:border-neutral-800">
+                <UIcon name="i-lucide-landmark" class="text-primary size-5" />
+                <h3 class="font-bold text-highlighted text-sm">
+                  Método de Cobro P2P
+                </h3>
+              </div>
 
               <div v-if="offer.metodoPago" class="space-y-3 py-1">
                 <div class="grid grid-cols-2 gap-4">
@@ -417,7 +413,7 @@ const isOwnOffer = computed(() => {
                     >Número de Cuenta</span
                   >
                   <span
-                    class="font-mono text-xs font-bold text-highlighted tracking-wider block bg-neutral-100 dark:bg-neutral-800/80 p-2 rounded-lg text-center border border-default"
+                    class="font-mono text-xs font-bold text-highlighted tracking-wider block bg-neutral-100 dark:bg-neutral-800/80 p-2 rounded-lg text-center border border-neutral-200 dark:border-neutral-800"
                   >
                     {{ offer.metodoPago.numeroCuenta }}
                   </span>
@@ -426,52 +422,50 @@ const isOwnOffer = computed(() => {
               <div v-else class="text-center py-8 text-muted text-xs">
                 Información de cobro no especificada.
               </div>
-            </UCard>
+            </div>
           </div>
 
           <!-- Tarjeta Principal de Información Comercial (Al final / abajo) -->
-          <UCard
-            class="backdrop-blur-md bg-white/90 dark:bg-neutral-900/90 border border-default shadow-xl rounded-2xl overflow-hidden"
+          <div
+            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm rounded-xl p-5 overflow-hidden"
           >
-            <template #header>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div
-                    class="p-2.5 rounded-xl"
-                    :class="
-                      offer.tipoOperacion === 'Compra'
-                        ? 'bg-info/10 text-info'
-                        : 'bg-success/10 text-success'
-                    "
-                  >
-                    <UIcon
-                      :name="
-                        offer.tipoOperacion === 'Compra'
-                          ? 'i-lucide-arrow-down-left'
-                          : 'i-lucide-arrow-up-right'
-                      "
-                      class="size-6"
-                    />
-                  </div>
-                  <div>
-                    <h2 class="text-base font-bold text-highlighted">
-                      Información Comercial
-                    </h2>
-                    <p class="text-xs text-muted">
-                      Datos publicados por el anunciante
-                    </p>
-                  </div>
-                </div>
-                <UBadge
-                  :color="offer.tipoOperacion === 'Compra' ? 'info' : 'success'"
-                  variant="soft"
-                  size="md"
-                  class="font-bold uppercase tracking-wider"
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-neutral-100 dark:border-neutral-800">
+              <div class="flex items-center gap-3">
+                <div
+                  class="p-2.5 rounded-xl"
+                  :class="
+                    offer.tipoOperacion === 'Compra'
+                      ? 'bg-info/10 text-info'
+                      : 'bg-success/10 text-success'
+                  "
                 >
-                  {{ offer.tipoOperacion === "Compra" ? "Compra" : "Venta" }}
-                </UBadge>
+                  <UIcon
+                    :name="
+                      offer.tipoOperacion === 'Compra'
+                        ? 'i-lucide-arrow-down-left'
+                        : 'i-lucide-arrow-up-right'
+                    "
+                    class="size-6"
+                  />
+                </div>
+                <div>
+                  <h2 class="text-base font-bold text-highlighted">
+                    Información Comercial
+                  </h2>
+                  <p class="text-xs text-muted">
+                    Datos publicados por el anunciante
+                  </p>
+                </div>
               </div>
-            </template>
+              <UBadge
+                :color="offer.tipoOperacion === 'Compra' ? 'info' : 'success'"
+                variant="soft"
+                size="md"
+                class="font-bold uppercase tracking-wider"
+              >
+                {{ offer.tipoOperacion === "Compra" ? "Compra" : "Venta" }}
+              </UBadge>
+            </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-6 py-2">
               <div class="space-y-1">
@@ -526,7 +520,7 @@ const isOwnOffer = computed(() => {
                 >
                 <div class="grid grid-cols-2 gap-4">
                   <div
-                    class="border border-dashed border-default p-3 rounded-xl text-center bg-transparent"
+                    class="border border-dashed border-neutral-200 dark:border-neutral-800 p-3 rounded-xl text-center bg-transparent"
                   >
                     <span
                       class="text-[10px] text-muted font-bold uppercase tracking-wider block mb-1"
@@ -538,7 +532,7 @@ const isOwnOffer = computed(() => {
                     >
                   </div>
                   <div
-                    class="border border-dashed border-default p-3 rounded-xl text-center bg-transparent"
+                    class="border border-dashed border-neutral-200 dark:border-neutral-800 p-3 rounded-xl text-center bg-transparent"
                   >
                     <span
                       class="text-[10px] text-muted font-bold uppercase tracking-wider block mb-1"
@@ -552,22 +546,20 @@ const isOwnOffer = computed(() => {
                 </div>
               </div>
             </div>
-          </UCard>
+          </div>
         </div>
 
         <!-- Calculadora y Formulario de Transacción -->
         <div class="space-y-6">
-          <UCard
-            class="backdrop-blur-md bg-white/90 dark:bg-neutral-900/90 border border-default shadow-xl rounded-2xl relative overflow-hidden"
+          <div
+            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm rounded-xl p-5 relative overflow-hidden"
           >
-            <template #header>
-              <div class="flex items-center gap-2">
-                <UIcon name="i-lucide-calculator" class="text-primary size-5" />
-                <h3 class="font-bold text-highlighted text-sm">
-                  Iniciar Intercambio
-                </h3>
-              </div>
-            </template>
+            <div class="flex items-center gap-2 pb-4 mb-4 border-b border-neutral-100 dark:border-neutral-800">
+              <UIcon name="i-lucide-calculator" class="text-primary size-5" />
+              <h3 class="font-bold text-highlighted text-sm">
+                Iniciar Intercambio
+              </h3>
+            </div>
 
             <!-- Caso: Oferta Propia -->
             <div v-if="isOwnOffer" class="space-y-4">
@@ -754,7 +746,7 @@ const isOwnOffer = computed(() => {
                 />
               </UForm>
             </div>
-          </UCard>
+          </div>
         </div>
       </div>
     </main>

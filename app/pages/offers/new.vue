@@ -4,7 +4,9 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import type { MetodoPagoResponse, OfertaResponse } from '~/types'
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth'],
+  title: "Nueva Oferta",
+  back: "/my-offers"
 })
 
 const toast = useToast()
@@ -76,7 +78,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       body: { ...rest, tipoOperacion: op }
     })
     toast.add({ title: 'Oferta publicada', description: 'Tu oferta ya está disponible en el mercado', color: 'success', icon: 'i-lucide-circle-check' })
-    await navigateTo('/offers')
+    await navigateTo('/my-offers')
   } catch {
     toast.add({ title: 'Error', description: 'No se pudo crear la oferta. Verifica los datos e inténtalo de nuevo.', color: 'error', icon: 'i-lucide-alert-circle' })
   } finally {
@@ -88,24 +90,9 @@ onMounted(fetchMetodosPago)
 </script>
 
 <template>
-  <div class="min-h-dvh bg-linear-to-br from-neutral-50 via-neutral-50 to-primary-50/30 dark:from-neutral-950 dark:via-neutral-950 dark:to-primary-950/20">
-    <header class="sticky top-0 z-10 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-lg border-b border-neutral-200/50 dark:border-neutral-800/50">
-      <div class="max-w-3xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-            <UIcon name="i-lucide-plus" class="size-5" />
-          </div>
-          <div>
-            <h1 class="text-lg font-bold">Nueva Oferta</h1>
-            <p class="text-xs text-muted leading-none mt-0.5">Publica una operación en el mercado P2P</p>
-          </div>
-        </div>
-        <UButton label="Volver" color="neutral" variant="ghost" icon="i-lucide-arrow-left" size="sm" @click="navigateTo('/offers')" />
-      </div>
-    </header>
-
+  <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50">
     <main class="max-w-3xl mx-auto px-6 py-10">
-      <div class="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl shadow-xl shadow-primary-500/5">
+      <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm">
         <div class="p-8">
           <UForm :schema="schema" :state="state" class="space-y-8" @submit="onSubmit">
             <section class="space-y-5">
@@ -221,7 +208,7 @@ onMounted(fetchMetodosPago)
             </section>
 
             <div class="flex items-center justify-end gap-3 pt-6 border-t border-neutral-100 dark:border-neutral-800">
-              <UButton label="Cancelar" color="neutral" variant="outline" size="lg" @click="navigateTo('/offers')" />
+              <UButton label="Cancelar" color="neutral" variant="outline" size="lg" @click="navigateTo('/my-offers')" class="cursor-pointer" />
               <UButton type="submit" label="Publicar oferta" color="primary" size="lg" :loading="submitting" icon="i-lucide-rocket" trailing />
             </div>
           </UForm>

@@ -3,6 +3,7 @@ import type { GetOffersResponse, MatchesResponse, UsuarioOfertasResponse } from 
 
 definePageMeta({
   middleware: ["auth"],
+  title: "Marketplace P2P",
 });
 
 const api = useApi();
@@ -225,23 +226,6 @@ onMounted(() => {
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
-    <header
-      class="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800"
-    >
-      <div
-        class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between"
-      >
-        <h1 class="text-xl font-bold">Marketplace de Cambio</h1>
-        <UButton
-          label="Volver"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-arrow-left"
-          @click="navigateTo('/debug')"
-        />
-      </div>
-    </header>
-
     <div class="max-w-7xl mx-auto px-6 py-8 flex gap-8">
       <aside class="w-72 shrink-0 space-y-6">
         <div

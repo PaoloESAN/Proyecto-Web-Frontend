@@ -2,6 +2,10 @@
 import { computed, ref, onMounted } from "vue";
 import type { UserProfileResponse } from "~/types";
 
+definePageMeta({
+  layout: false,
+});
+
 const router = useRouter();
 const authStore = useAuthStore();
 const api = useApi();

@@ -3,6 +3,10 @@ import * as z from "zod";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { MessageResponse, ErrorResponse } from "~/types";
 
+definePageMeta({
+  layout: false,
+});
+
 const schema = z.object({
   correo: z.string().email("Ingresa un correo electrónico válido"),
 });

@@ -3,6 +3,10 @@ import * as z from "zod";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { ErrorResponse, LoginRequest, LoginResponse } from "~/types";
 
+definePageMeta({
+  layout: false,
+});
+
 // Esquema de validación con Zod
 const schema = z.object({
   correo: z.email("Ingresa un formato de correo electrónico válido"),
@@ -35,8 +39,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     // Guardar sesión en Pinia y cookies
     authStore.login(response.token, response.expiracion, response.usuario);
 
-    // Redirigir al panel de debug
-    await navigateTo('/debug')
+    // Redirigir a la pantalla principal
+    await navigateTo('/marketplace')
   } catch (error: any) {
     const errorData = error.data as ErrorResponse | undefined;
     if (errorData && errorData.mensaje) {

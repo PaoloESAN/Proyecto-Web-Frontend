@@ -3,6 +3,10 @@ import * as z from "zod";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { ErrorResponse, RegisterRequest, RegisterResponse } from "~/types";
 
+definePageMeta({
+  layout: false,
+});
+
 // Esquema de validación con Zod
 const schema = z
   .object({

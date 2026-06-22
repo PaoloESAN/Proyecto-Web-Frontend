@@ -15,6 +15,8 @@ import type {
 
 definePageMeta({
   middleware: ["auth"],
+  title: "Sala de Transacción",
+  back: "/history",
 });
 
 const route = useRoute();
@@ -588,38 +590,21 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="min-h-dvh bg-linear-to-b from-neutral-50 to-neutral-100 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-50"
+    class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50"
   >
-    <!-- Header -->
-    <header
-      class="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200/50 dark:border-neutral-800/50 sticky top-0 z-40"
-    >
-      <div
-        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between"
-      >
-        <div class="flex items-center gap-3">
-          <UButton
-            label="Volver"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-arrow-left"
-            @click="navigateTo('/debug')"
-          />
-          <span class="text-sm font-bold tracking-tight text-neutral-400"
-            >/</span
-          >
-          <h1 class="text-lg font-bold tracking-tight flex items-center gap-2">
+    <!-- Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Encabezado de la Transacción -->
+      <div v-if="transaction" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div class="flex items-center gap-2">
+          <h1 class="text-2xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
             Sala de Transacción
-            <span
-              class="font-mono text-xs px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 rounded-md"
-            >
+            <span class="font-mono text-sm px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 rounded-md">
               #{{ transactionId }}
             </span>
           </h1>
         </div>
-
-        <div v-if="transaction" class="flex items-center gap-2">
-          <!-- Badges de Estado -->
+        <div class="flex items-center gap-2">
           <UBadge
             v-if="transaction.estado === 'Pendiente'"
             color="warning"
@@ -667,10 +652,6 @@ onBeforeUnmount(() => {
           </UBadge>
         </div>
       </div>
-    </header>
-
-    <!-- Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Loading State -->
       <div v-if="loading" class="space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -697,10 +678,11 @@ onBeforeUnmount(() => {
           {{ errorMsg }}
         </p>
         <UButton
-          label="Volver al Panel"
+          label="Volver al Historial"
           color="neutral"
           icon="i-lucide-arrow-left"
-          @click="navigateTo('/debug')"
+          class="cursor-pointer"
+          @click="navigateTo('/history')"
         />
       </div>
 
@@ -713,7 +695,7 @@ onBeforeUnmount(() => {
         <div class="lg:col-span-2 space-y-6">
           <!-- Stepper Visual -->
           <div
-            class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl p-6 shadow-sm"
+            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm"
           >
             <h2
               class="text-xs font-bold tracking-wider text-neutral-400 dark:text-neutral-500 uppercase mb-4"
@@ -836,7 +818,7 @@ onBeforeUnmount(() => {
 
           <!-- Acciones de Flujo de Pago -->
           <div
-            class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl p-6 shadow-sm space-y-6"
+            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm space-y-6"
           >
             <!-- CASO: ESTADO PENDIENTE O PAGADO -->
             <div
@@ -1515,7 +1497,7 @@ onBeforeUnmount(() => {
           <!-- Ficha de Contraparte -->
           <div
             v-if="contraparte"
-            class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl p-6 shadow-sm space-y-4"
+            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm space-y-4"
           >
             <h2
               class="text-xs font-bold tracking-wider text-neutral-400 dark:text-neutral-500 uppercase"
@@ -1564,7 +1546,7 @@ onBeforeUnmount(() => {
 
           <!-- Chat en Tiempo Real -->
           <div
-            class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl shadow-sm overflow-hidden flex flex-col h-120"
+            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm overflow-hidden flex flex-col h-120"
           >
             <!-- Chat Header -->
             <div
