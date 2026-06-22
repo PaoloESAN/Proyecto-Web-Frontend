@@ -425,12 +425,9 @@ export interface ErrorResponse {
 
 #### `GET /api/ofertas/matches`
 
-- **Requiere Auth**
+- **Requiere Auth** (Busca ofertas de otros usuarios compatibles con la oferta seleccionada por el usuario autenticado)
 - **Query Parameters**:
-  - `moneda`: string (Requerido)
-  - `tipoOperacion`: "Compra" | "Venta" (Requerido)
-  - `monto`: number (Requerido)
-  - `tipoCambio`: number (Requerido)
+  - `ofertaId`: number (Requerido)
 - **Respuestas**:
   - `200 OK`: Array de ofertas coincidentes.
     ```typescript
