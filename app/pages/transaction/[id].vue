@@ -839,7 +839,7 @@ onBeforeUnmount(() => {
                   <h3
                     class="text-sm font-bold text-primary-800 dark:text-primary-400"
                   >
-                    Instrucciones de Pago P2P
+                    Instrucciones de pago
                   </h3>
                   <p
                     class="text-xs text-primary-700/90 dark:text-primary-400/90 mt-1 flex flex-col gap-1"
@@ -1187,7 +1187,7 @@ onBeforeUnmount(() => {
                     Califica tu experiencia con la contraparte
                   </h3>
                   <p class="text-xs text-neutral-400">
-                    Tu opinión es muy importante para mantener una comunidad P2P
+                    Tu opinión es muy importante para mantener una comunidad
                     confiable y segura.
                   </p>
                 </div>

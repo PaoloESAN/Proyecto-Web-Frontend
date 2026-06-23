@@ -100,7 +100,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             Crea tu cuenta
           </h1>
           <p class="text-sm text-neutral-500 dark:text-neutral-400">
-            Regístrate en la plataforma P2P y empieza a comerciar divisas
+            Regístrate en la plataforma y empieza a comerciar divisas
           </p>
         </div>
       </template>

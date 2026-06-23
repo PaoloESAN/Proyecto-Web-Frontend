@@ -171,15 +171,15 @@ const userItems = computed<DropdownMenuItem[][]>(() => {
       <!-- Slot #header: Brand logo -->
       <template #header>
         <div class="flex items-center gap-3 w-full overflow-hidden">
-          <div class="p-2 bg-primary/10 text-primary rounded-xl shrink-0">
-            <UIcon name="i-lucide-arrow-right-left" class="size-6" />
+          <div class="size-10 rounded-xl border border-default bg-white dark:bg-neutral-900 shrink-0 p-1.5 flex items-center justify-center">
+            <img src="/logo.svg" alt="interYa" class="size-full object-contain" />
           </div>
           <div class="min-w-0 flex-1" v-if="open">
-            <span class="font-bold text-base tracking-tight text-neutral-900 dark:text-white block truncate">
-              FinTech P2P
+            <span class="text-base tracking-tight text-neutral-900 dark:text-white block truncate font-semibold [font-family:Inter,sans-serif]">
+              inter<span class="text-primary">Ya</span>
             </span>
-            <span class="block text-[9px] text-primary font-bold uppercase tracking-wider leading-none mt-0.5">
-              Intercambio
+            <span class="block text-[9px] text-neutral-500 font-bold uppercase tracking-wider leading-none mt-0.5">
+              Intercambio de divisas
             </span>
           </div>
         </div>
@@ -219,7 +219,7 @@ const userItems = computed<DropdownMenuItem[][]>(() => {
             </div>
 
             <div class="rounded-xl border border-default bg-elevated/70 p-3">
-              <p class="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Tip P2P</p>
+              <p class="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Tip rápido</p>
               <p class="text-xs text-toned leading-relaxed">
                 Revisa moneda y banco antes de iniciar una transacción para evitar errores en el envío.
               </p>
@@ -288,7 +288,10 @@ const userItems = computed<DropdownMenuItem[][]>(() => {
           />
           <span v-if="route.meta.back" class="text-sm font-bold text-neutral-300 dark:text-neutral-700">/</span>
           <span class="font-bold text-base sm:text-lg tracking-tight text-neutral-900 dark:text-white">
-            {{ route.meta.title || 'FinTech P2P Intercambio' }}
+            <template v-if="route.meta.title">{{ route.meta.title }}</template>
+            <template v-else>
+              <span class="font-semibold [font-family:Inter,sans-serif]">inter<span class="text-primary">Ya</span></span>
+            </template>
           </span>
         </div>
       </header>

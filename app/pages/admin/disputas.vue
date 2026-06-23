@@ -294,7 +294,7 @@ onMounted(() => {
             <div class="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 space-y-4">
               <h3 class="text-sm font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider flex items-center gap-2">
                 <UIcon name="i-lucide-arrow-left-right" class="size-4 text-primary" />
-                Detalle de Cuentas e Intercambio Cruzado (P2P)
+                Detalle de cuentas e intercambio cruzado
               </h3>
 
               <USkeleton v-if="loadingTxDetails" class="h-28 w-full rounded-lg" />
@@ -531,7 +531,7 @@ onMounted(() => {
                 </li>
                 <li>
                   <strong class="text-neutral-800 dark:text-neutral-200">A favor del Comprador:</strong>
-                  Se cancela la transacción. La oferta vuelve a estar activa y visible en el mercado P2P para recibir nuevas solicitudes.
+                  Se cancela la transacción. La oferta vuelve a estar activa y visible en el mercado para recibir nuevas solicitudes.
                 </li>
               </ul>
             </div>

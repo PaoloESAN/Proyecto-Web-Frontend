@@ -7,7 +7,7 @@ import type {
 
 definePageMeta({
   middleware: ['auth'],
-  title: 'Marketplace P2P'
+  title: 'Marketplace'
 })
 
 const api = useApi()

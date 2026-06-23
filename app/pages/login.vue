@@ -79,7 +79,7 @@ function quickLogin(correo: string, contrasena: string) {
             Bienvenido de nuevo
           </h1>
           <p class="text-sm text-neutral-500 dark:text-neutral-400">
-            Ingresa a tu cuenta P2P para comerciar
+            Ingresa a tu cuenta para comerciar
           </p>
         </div>
       </template>
