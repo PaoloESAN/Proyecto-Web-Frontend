@@ -385,10 +385,58 @@ export interface ErrorResponse {
           apellidos: string;
           correo: string;
           calificacion: number;
+          fotoPerfilUrl: string | null;
         };
       }[];
     }
     ```
+
+#### `GET /api/ofertas/marketplace`
+
+- **Requiere Auth** (Muestra ofertas en estado "Activa" y "En Proceso" de otros usuarios, excluyendo las del usuario autenticado que realiza la consulta)
+- **Query Parameters**:
+  - `moneda`?: string
+  - `tipoOperacion`?: "Compra" | "Venta"
+  - `monto`?: number
+  - `page`?: number (Default: 1)
+  - `pageSize`?: number (Default: 10)
+- **Respuestas**:
+  - `200 OK`:
+    ```typescript
+    export interface GetMarketplaceOffersResponse {
+      total: number;
+      pagina: number;
+      limite: number;
+      totalPaginas: number;
+      datos: {
+        ofertaId: number;
+        tipoOperacion: "Compra" | "Venta";
+        moneda: string;
+        montoTotal: number;
+        montoMinimo: number;
+        montoMaximo: number;
+        tipoCambio: number;
+        estado: string;
+        fechaPublicacion: string;
+        metodoPago: {
+          metodoPagoId: number;
+          banco: string;
+          nombreTitular: string;
+          numeroCuenta: string;
+          tipoMoneda: string;
+        } | null;
+        usuarioCreador: {
+          usuarioId: number;
+          nombres: string;
+          apellidos: string;
+          correo: string;
+          calificacion: number;
+          fotoPerfilUrl: string | null;
+        } | null;
+      }[];
+    }
+    ```
+  - `401 Unauthorized`.
 
 #### `GET /api/ofertas/:id`
 
@@ -419,6 +467,7 @@ export interface ErrorResponse {
         apellidos: string;
         correo: string;
         calificacion: number;
+        fotoPerfilUrl: string | null;
       } | null;
     }
     ```

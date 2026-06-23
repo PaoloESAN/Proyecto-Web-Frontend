@@ -50,7 +50,41 @@ export interface GetOffersResponse {
       apellidos: string;
       correo: string;
       calificacion: number;
+      fotoPerfilUrl: string | null;
     };
+  }[];
+}
+
+export interface GetMarketplaceOffersResponse {
+  total: number;
+  pagina: number;
+  limite: number;
+  totalPaginas: number;
+  datos: {
+    ofertaId: number;
+    tipoOperacion: "Compra" | "Venta";
+    moneda: string;
+    montoTotal: number;
+    montoMinimo: number;
+    montoMaximo: number;
+    tipoCambio: number;
+    estado: string;
+    fechaPublicacion: string;
+    metodoPago: {
+      metodoPagoId: number;
+      banco: string;
+      nombreTitular: string;
+      numeroCuenta: string;
+      tipoMoneda: string;
+    } | null;
+    usuarioCreador: {
+      usuarioId: number;
+      nombres: string;
+      apellidos: string;
+      correo: string;
+      calificacion: number;
+      fotoPerfilUrl: string | null;
+    } | null;
   }[];
 }
 

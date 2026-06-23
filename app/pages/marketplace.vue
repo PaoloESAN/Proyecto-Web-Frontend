@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { GetOffersResponse, MatchesResponse, UsuarioOfertasResponse } from '~/types'
+import type { GetMarketplaceOffersResponse, GetOffersResponse, MatchesResponse, UsuarioOfertasResponse } from '~/types'
 
 definePageMeta({
   middleware: ["auth"],
@@ -21,7 +21,7 @@ const page = ref(1);
 const pageSize = ref(6);
 
 // Respuestas crudas del backend
-const ofertasRaw = ref<GetOffersResponse["datos"]>([]);
+const ofertasRaw = ref<GetMarketplaceOffersResponse["datos"]>([]);
 const totalRaw = ref(0);
 const loading = ref(false);
 
@@ -37,7 +37,7 @@ async function fetchOfertas() {
   loading.value = true;
   try {
     const params = { page: 1, pageSize: 100 }; // Traer hasta 100 ofertas para filtrado local fluido
-    const res = await api<GetOffersResponse>("/api/ofertas", { params });
+    const res = await api<GetMarketplaceOffersResponse>("/api/ofertas/marketplace", { params });
     ofertasRaw.value = res.datos ?? [];
     totalRaw.value = res.total ?? 0;
   } catch {
