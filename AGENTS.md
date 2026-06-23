@@ -46,14 +46,15 @@ Para el desarrollo y mantenimiento del frontend, el agente debe dominar y aplica
 ## 3. Reglas de Negocio Críticas
 
 - **Rol Intermediario P2P (Sin Custodia de Fondos)**: La aplicación no almacena, recibe ni custodia dinero. Las transferencias bancarias se realizan de forma externa y directa entre los usuarios de banco a banco (P2P). La app actúa únicamente como facilitador para mostrar la información bancaria de destino/recepción y los comprobantes de pago correspondientes.
-- **Límites de Oferta**: Una oferta tiene un `montoTotal` (inventario del usuario) y límites por transacción (`montoMinimo` y `montoMaximo`). El monto mínimo NUNCA puede superar al máximo.
+- **Modelo Actual de Oferta (Monto Único por Conversión)**: La oferta se define por `tipoOperacion`, `monedaTengo`, `monedaRecibo`, `cantidad` y `metodoPagoId` (cuenta en `monedaTengo`). El backend calcula automáticamente `tipoCambio`, `montoTengo` y `montoRecibo` usando API externa de tipo de cambio. Ya no se ingresan manualmente `montoMinimo`, `montoMaximo` ni `tipoCambio`.
 - **Seguridad Transaccional**: El flujo de intercambio bloquea la edición/cancelación. Si una oferta tiene transacciones en estado `Pendiente`, `Pagado` o `Disputa`, no puede ser modificada (`PUT`) ni cancelada/eliminada (`DELETE`).
 - **Flujo de Ofertas y Gestión ("Mis Ofertas")**:
   - Cada oferta en estado `"En Proceso"` se asocia con a lo más una transacción/solicitud activa (el emparejamiento es directo de 1 a 1).
-  - En la lista de ofertas del usuario (`MyOffersScreen`), se ocultan las ofertas en estado `"Finalizada"`, mostrando únicamente las ofertas con estado `"Activa"` y `"En Proceso"`.
-  - La edición y eliminación de una oferta solo está permitida si está en estado `"Activa"`. El flujo se realiza haciendo clic sobre la tarjeta de la oferta para abrir un modal de edición. Dicho modal contiene el botón de "Eliminar Oferta", el cual solicita confirmación a través de un diálogo adicional.
+  - En la lista de ofertas del usuario (`MyOffersScreen`), se muestran únicamente las ofertas con estado `"Activa"` y `"En Proceso"`.
+  - La edición y eliminación de una oferta solo está permitida si está en estado `"Activa"`.
+  - La edición actualiza únicamente `cantidad`; el backend recalcula montos y tipo de cambio vigente.
 - **Ciclo de Transacciones (Doble Confirmación)**:
-  1. `Pendiente`: Comprador inicia la transacción seleccionando su cuenta de recepción. Ambos participantes ven sus cuentas cruzadas.
+  1. `Pendiente`: El participante inicia la transacción sin ingresar monto manual (se usa el monto fijo de la oferta), seleccionando su cuenta de recepción en `monedaRecibo`. Ambos participantes ven sus cuentas cruzadas.
   2. `Pagado` / `Confirmación Parcial`: Ambos participantes deben realizar sus transferencias cruzadas y subir sus respectivos comprobantes de pago (`POST /api/transacciones/:id/voucher`).
   3. `Finalizado` o `Disputa`: Ambos participantes deben verificar el comprobante de la contraparte y presionar "Confirmar Pago Correcto" (`POST /api/transacciones/:id/confirm`). Solo cuando ambos confirman (`confirmadoComprador == true` y `confirmadoVendedor == true`), la transacción pasa a estado `Finalizado`. Cualquiera de las partes puede abrir un conflicto (`Disputa`) antes de confirmar.
 - **Resolución de Disputas**: Exclusivo para administradores. La resolución es binaria en cuanto al estado informativo de la transacción dentro del sistema:
@@ -311,6 +312,26 @@ export interface ErrorResponse {
 
 ### C. Ofertas (Offers)
 
+#### `GET /api/tipo-cambio/convert`
+
+- **Público**
+- **Query Parameters**:
+  - `from`: string (Ej: `USD`)
+  - `to`: string (Ej: `PEN`)
+  - `amount`: number (> 0)
+- **Respuestas**:
+  - `200 OK`:
+    ```typescript
+    export interface ExchangeConvertResponse {
+      from: string;
+      to: string;
+      amount: number;
+      rate: number;
+      convertedAmount: number;
+    }
+    ```
+  - `400 Bad Request`
+
 #### `POST /api/ofertas`
 
 - **Requiere Auth**
@@ -319,11 +340,9 @@ export interface ErrorResponse {
   export interface OfertaCreateRequest {
     metodoPagoId: number;
     tipoOperacion: "Compra" | "Venta";
-    moneda: string; // Ej: "USD", "PEN"
-    montoTotal: number; // > 0
-    montoMinimo: number; // > 0
-    montoMaximo: number; // > 0, >= montoMinimo
-    tipoCambio: number; // > 0
+    monedaTengo: string; // Ej: "PEN"
+    monedaRecibo: string; // Ej: "USD"
+    cantidad: number; // > 0
   }
   ```
 - **Respuestas**:
@@ -334,10 +353,10 @@ export interface ErrorResponse {
       usuarioCreadorId: number;
       metodoPagoId: number;
       tipoOperacion: "Compra" | "Venta";
-      moneda: string;
-      montoTotal: number;
-      montoMinimo: number;
-      montoMaximo: number;
+      monedaTengo: string;
+      monedaRecibo: string;
+      montoTengo: number;
+      montoRecibo: number;
       tipoCambio: number;
       estado: string; // "Activa"
       fechaPublicacion: string;
@@ -349,7 +368,7 @@ export interface ErrorResponse {
 
 - **Público** (Muestra ofertas en estado "Activa" y "En Proceso")
 - **Query Parameters**:
-  - `moneda`?: string
+  - `moneda`?: string (filtra por `monedaTengo` o `monedaRecibo`)
   - `tipoOperacion`?: "Compra" | "Venta"
   - `monto`?: number
   - `page`?: number (Default: 1)
@@ -365,10 +384,10 @@ export interface ErrorResponse {
       datos: {
         ofertaId: number;
         tipoOperacion: "Compra" | "Venta";
-        moneda: string;
-        montoTotal: number;
-        montoMinimo: number;
-        montoMaximo: number;
+        monedaTengo: string;
+        monedaRecibo: string;
+        montoTengo: number;
+        montoRecibo: number;
         tipoCambio: number;
         estado: string;
         fechaPublicacion: string;
@@ -395,7 +414,7 @@ export interface ErrorResponse {
 
 - **Requiere Auth** (Muestra ofertas en estado "Activa" y "En Proceso" de otros usuarios, excluyendo las del usuario autenticado que realiza la consulta)
 - **Query Parameters**:
-  - `moneda`?: string
+  - `moneda`?: string (filtra por `monedaTengo` o `monedaRecibo`)
   - `tipoOperacion`?: "Compra" | "Venta"
   - `monto`?: number
   - `page`?: number (Default: 1)
@@ -411,10 +430,10 @@ export interface ErrorResponse {
       datos: {
         ofertaId: number;
         tipoOperacion: "Compra" | "Venta";
-        moneda: string;
-        montoTotal: number;
-        montoMinimo: number;
-        montoMaximo: number;
+        monedaTengo: string;
+        monedaRecibo: string;
+        montoTengo: number;
+        montoRecibo: number;
         tipoCambio: number;
         estado: string;
         fechaPublicacion: string;
@@ -447,10 +466,10 @@ export interface ErrorResponse {
     export interface OfertaDetalleResponse {
       ofertaId: number;
       tipoOperacion: "Compra" | "Venta";
-      moneda: string;
-      montoTotal: number;
-      montoMinimo: number;
-      montoMaximo: number;
+      monedaTengo: string;
+      monedaRecibo: string;
+      montoTengo: number;
+      montoRecibo: number;
       tipoCambio: number;
       estado: string;
       fechaPublicacion: string;
@@ -484,10 +503,10 @@ export interface ErrorResponse {
     export type MatchesResponse = {
       ofertaId: number;
       tipoOperacion: string;
-      moneda: string;
-      montoTotal: number;
-      montoMinimo: number;
-      montoMaximo: number;
+      monedaTengo: string;
+      monedaRecibo: string;
+      montoTengo: number;
+      montoRecibo: number;
       tipoCambio: number;
       estado: string;
       fechaPublicacion: string;
@@ -512,13 +531,10 @@ export interface ErrorResponse {
 #### `PUT /api/ofertas/:id`
 
 - **Requiere Auth**
-- **Request Body** (Importante: Propiedades en snake_case):
+- **Request Body**:
   ```typescript
   export interface OfertaUpdateRequest {
-    monto_total: number;
-    monto_minimo: number;
-    monto_maximo: number;
-    tipo_cambio: number;
+    cantidad: number;
   }
   ```
 - **Respuestas**:
@@ -551,10 +567,10 @@ export interface ErrorResponse {
     export type UsuarioOfertasResponse = {
       ofertaId: number;
       tipoOperacion: "Compra" | "Venta";
-      moneda: string;
-      montoTotal: number;
-      montoMinimo: number;
-      montoMaximo: number;
+      monedaTengo: string;
+      monedaRecibo: string;
+      montoTengo: number;
+      montoRecibo: number;
       tipoCambio: number;
       estado: string; // "Activa" | "En Proceso"
       fechaPublicacion: string;
@@ -580,8 +596,7 @@ export interface ErrorResponse {
   ```typescript
   export interface TransaccionCreateRequest {
     ofertaId: number;
-    montoOperacion: number; // Debe cumplir los límites de la oferta
-    metodoPagoCompradorId: number; // Cuenta bancaria seleccionada por el comprador
+    metodoPagoParticipanteId: number; // Cuenta del participante en monedaRecibo
   }
   ```
 - **Respuestas**:
@@ -594,8 +609,9 @@ export interface ErrorResponse {
         ofertaId: number;
         usuarioCompradorId: number;
         usuarioVendedorId: number;
-        metodoPagoCompradorId: number;
-        montoOperacion: number;
+        metodoPagoParticipanteId: number;
+        montoTengo: number;
+        montoRecibo: number;
         tipoCambioAplicado: number;
         estado: "Pendiente";
         fechaInicio: string;
@@ -624,8 +640,10 @@ export interface ErrorResponse {
         transaccionId: number;
         ofertaId: number;
         tipoOperacion: "Compra" | "Venta";
-        moneda: string;
-        montoOperacion: number;
+        monedaTengo: string;
+        monedaRecibo: string;
+        montoTengo: number;
+        montoRecibo: number;
         tipoCambioAplicado: number;
         estado: string;
         fechaInicio: string;
@@ -651,7 +669,10 @@ export interface ErrorResponse {
     export interface TransaccionDetailResponse {
       transaccionId: number;
       ofertaId: number;
-      montoOperacion: number;
+      monedaTengo: string;
+      monedaRecibo: string;
+      montoTengo: number;
+      montoRecibo: number;
       tipoCambioAplicado: number;
       estado: string; // "Pendiente" | "Pagado" | "Finalizado" | "Disputa" | "Cancelado"
       fechaInicio: string;
@@ -674,7 +695,7 @@ export interface ErrorResponse {
         nombreTitular: string;
         tipoMoneda: string;
       };
-      metodoPagoComprador: {
+      metodoPagoParticipante: {
         banco: string;
         numeroCuenta: string;
         nombreTitular: string;
@@ -1013,17 +1034,22 @@ El Frontend debe habilitar una comunicación interactiva instantánea en la vist
 La vista detallada de la transacción (`app/pages/transaction/[id].vue`) implementa un flujo interactivo estructurado y seguro para ambas partes:
 
 ### A. Cuentas Bancarias Cruzadas
+
 Para facilitar el intercambio sin confusiones sobre a dónde enviar el dinero, el sistema calcula y muestra de forma cruzada las cuentas:
+
 1. **Cuenta Destino (Enviar Pago)**: Representa la cuenta bancaria de la **contraparte**. El usuario actual debe transferir fondos a este banco, número de cuenta y titular.
 2. **Tu Cuenta de Recepción (Recibir Pago)**: Representa la cuenta del **usuario actual** configurada para esta transacción. Es el destino donde la contraparte depositará los fondos del intercambio.
 
 ### B. Desglose de Montos Exactos
+
 La interfaz de usuario calcula dinámicamente:
-* **Monto a Enviar**: En la moneda destino, aplicando el tipo de cambio pactado en la oferta si la divisa es distinta al activo base.
-* **Monto a Recibir**: El monto y divisa esperada en la cuenta receptora del usuario.
-Esto asegura que ambos usuarios sepan exactamente cuántas unidades de fiat enviar y recibir.
+
+- **Monto a Enviar**: En la moneda destino, aplicando el tipo de cambio pactado en la oferta si la divisa es distinta al activo base.
+- **Monto a Recibir**: El monto y divisa esperada en la cuenta receptora del usuario.
+  Esto asegura que ambos usuarios sepan exactamente cuántas unidades de fiat enviar y recibir.
 
 ### C. Flujo de Doble Confirmación y Voucher
+
 1. **Envío de Comprobante**: Ambas partes deben realizar su transferencia correspondiente y subir su comprobante de pago (`POST /api/transacciones/:id/voucher`).
 2. **Habilitación de Confirmación**: El botón **"Confirmar Pago Correcto"** (`POST /api/transacciones/:id/confirm`) está estrictamente condicionado a que la contraparte ya haya subido su comprobante (`contraparteVoucher !== null`). Si no lo ha hecho, se muestra un banner de advertencia animando a esperar. Esto previene liberaciones accidentales de fondos antes de verificar el recibo.
 3. **Mecanismo de Disputa**: El botón **"Abrir Disputa"** permanece habilitado e interactivo en todo momento si surge algún inconveniente, y cuenta con un **Modal de Confirmación** para evitar aperturas accidentales.
