@@ -28,7 +28,7 @@ function getItems(state: "collapsed" | "expanded") {
         {
           label: "Mis ofertas",
           icon: "i-lucide-send",
-          to: { path: "/my-offers", query: { view: "made" } },
+          to: "/my-offers",
         },
       ],
     },

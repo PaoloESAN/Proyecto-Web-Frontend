@@ -3,7 +3,7 @@ import type { UsuarioOfertasResponse, OfertaUpdateRequest, TransaccionHistoryRes
 
 definePageMeta({
   middleware: ['auth'],
-  title: 'Ofertas'
+  title: 'Mis ofertas'
 })
 
 const api = useApi()
@@ -23,10 +23,53 @@ const confirmCancelOpen = ref(false)
 const cancellingOffer = ref<UsuarioOfertasResponse[number] | null>(null)
 const deleting = ref(false)
 
-type ViewType = 'received' | 'made'
-const currentView = computed<ViewType>(() => {
-  return route.query.view === 'received' ? 'received' : 'made'
+const inProgressTxByOfferId = computed(() => {
+  const map = new Map<number, number>()
+
+  for (const tx of receivedTransactions.value) {
+    if (!map.has(tx.ofertaId)) {
+      map.set(tx.ofertaId, tx.transaccionId)
+    }
+  }
+
+  return map
 })
+
+
+
+function formatAmount(value: number) {
+  return Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+
+
+function offerStatusColor(estado: string) {
+  if (estado === 'Activa') return 'success'
+  if (estado === 'En Proceso') return 'warning'
+  return 'neutral'
+}
+
+
+
+function getInProgressTransactionId(ofertaId: number) {
+  return inProgressTxByOfferId.value.get(ofertaId) ?? null
+}
+
+function openInProgressOffer(item: UsuarioOfertasResponse[number]) {
+  if (item.estado !== 'En Proceso') return
+
+  const txId = getInProgressTransactionId(item.ofertaId)
+  if (!txId) {
+    toast.add({
+      title: 'Transacción no encontrada',
+      description: 'No se pudo resolver la transacción asociada a esta oferta.',
+      color: 'warning'
+    })
+    return
+  }
+
+  navigateTo(`/transaction/${txId}`)
+}
 
 async function fetchAllData() {
   loading.value = true
@@ -37,7 +80,7 @@ async function fetchAllData() {
     ])
 
     offers.value = offersRes ?? []
-    receivedTransactions.value = (txRes?.datos ?? []).filter(t => t.miRol === 'Vendedor')
+    receivedTransactions.value = (txRes?.datos ?? []).filter(t => t.miRol === 'Vendedor' && t.estado !== 'Finalizado')
   } catch {
     toast.add({ title: 'Error', description: 'No se pudo cargar la información de ofertas.', color: 'error' })
   } finally {
@@ -91,7 +134,14 @@ async function ejecutarCancelacion() {
   }
 }
 
-onMounted(fetchAllData)
+onMounted(async () => {
+  if (route.query.view) {
+    await navigateTo('/my-offers', { replace: true })
+    return
+  }
+
+  await fetchAllData()
+})
 </script>
 
 <template>
@@ -99,16 +149,11 @@ onMounted(fetchAllData)
     <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div class="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 class="text-xl font-bold text-neutral-900 dark:text-white">
-            {{ currentView === 'received' ? 'Mis transacciones' : 'Mis ofertas' }}
-          </h1>
-          <p class="text-sm text-neutral-500 mt-1">
-            {{ currentView === 'received' ? 'Transacciones iniciadas sobre tus publicaciones.' : 'Gestiona tus ofertas publicadas.' }}
-          </p>
+          <h1 class="text-xl font-bold text-neutral-900 dark:text-white">Mis ofertas</h1>
+          <p class="text-sm text-neutral-500 mt-1">Gestiona tus ofertas publicadas.</p>
         </div>
 
         <UButton
-          v-if="currentView === 'made'"
           label="Nueva Oferta"
           color="primary"
           icon="i-lucide-plus"
@@ -121,80 +166,65 @@ onMounted(fetchAllData)
         <USkeleton v-for="i in 3" :key="i" class="h-28 rounded-xl" />
       </div>
 
-      <template v-else-if="currentView === 'received'">
-        <div v-if="receivedTransactions.length === 0" class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl py-16 text-center">
-          <p class="text-neutral-500 font-medium">Aún no te han hecho ofertas</p>
-          <p class="text-sm text-neutral-400 mt-1">Cuando acepten tus publicaciones aparecerán aquí.</p>
-        </div>
-
-        <div v-else class="grid gap-4">
-          <NuxtLink
-            v-for="tx in receivedTransactions"
-            :key="tx.transaccionId"
-            :to="`/transaction/${tx.transaccionId}`"
-            class="block rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 p-4 space-y-3 hover:shadow-md transition"
-          >
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-bold">Transacción #{{ tx.transaccionId }}</p>
-                <p class="text-xs text-neutral-500">Oferta #{{ tx.ofertaId }} · {{ tx.tipoOperacion }} · {{ tx.monedaTengo }} → {{ tx.monedaRecibo }}</p>
-              </div>
-              <UBadge :color="tx.estado === 'Disputa' ? 'error' : (tx.estado === 'Pendiente' ? 'warning' : (tx.estado === 'Pagado' ? 'info' : 'primary'))" variant="soft">
-                {{ tx.estado }}
-              </UBadge>
-            </div>
-
-            <div class="grid sm:grid-cols-3 gap-3 text-sm">
-              <div class="border border-default rounded-lg p-3">
-                <p class="text-xs text-neutral-500">Entrega contraparte</p>
-                <p class="font-bold">{{ Number(tx.montoTengo).toLocaleString() }} {{ tx.monedaTengo }}</p>
-              </div>
-              <div class="border border-default rounded-lg p-3">
-                <p class="text-xs text-neutral-500">Recibe contraparte</p>
-                <p class="font-bold">{{ Number(tx.montoRecibo).toLocaleString() }} {{ tx.monedaRecibo }}</p>
-              </div>
-              <div class="border border-default rounded-lg p-3">
-                <p class="text-xs text-neutral-500">Usuario</p>
-                <p class="font-bold">{{ tx.contraparte.nombres }} {{ tx.contraparte.apellidos }}</p>
-              </div>
-            </div>
-          </NuxtLink>
-        </div>
-      </template>
-
       <template v-else>
         <div v-if="offers.length === 0" class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl py-16 text-center">
           <p class="text-neutral-500 font-medium">Aún no tienes ofertas creadas</p>
         </div>
 
         <div v-else class="grid gap-4">
-          <div v-for="item in offers" :key="item.ofertaId" class="rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 p-4 space-y-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-bold">{{ item.tipoOperacion }} · {{ item.monedaTengo }} → {{ item.monedaRecibo }}</p>
-                <p class="text-xs text-neutral-500">Oferta #{{ item.ofertaId }}</p>
+          <div
+            v-for="item in offers"
+            :key="item.ofertaId"
+            :class="[
+              'group rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 p-5 space-y-4 transition-all duration-200',
+              item.estado === 'En Proceso'
+                ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/30'
+                : ''
+            ]"
+            @click="openInProgressOffer(item)"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-lg font-extrabold text-neutral-900 dark:text-white">Oferta #{{ item.ofertaId }}</p>
+                <p class="text-xs sm:text-sm text-neutral-500 mt-0.5 truncate">
+                  {{ item.tipoOperacion }} · {{ item.monedaTengo }} → {{ item.monedaRecibo }}
+                </p>
               </div>
-              <UBadge :color="item.estado === 'Activa' ? 'primary' : 'warning'" variant="subtle">{{ item.estado }}</UBadge>
+              <UBadge :color="offerStatusColor(item.estado)" variant="soft" class="shrink-0">{{ item.estado }}</UBadge>
             </div>
 
             <div class="grid sm:grid-cols-3 gap-3 text-sm">
-              <div class="border border-default rounded-lg p-3">
-                <p class="text-xs text-neutral-500">Monto que entregas</p>
-                <p class="font-bold">{{ Number(item.montoTengo).toLocaleString() }} {{ item.monedaTengo }}</p>
+              <div class="rounded-xl border border-default bg-muted/20 p-3.5">
+                <p class="text-[11px] uppercase tracking-wide text-neutral-500 font-semibold">Tú entregas</p>
+                <p class="font-extrabold text-rose-500 mt-1">{{ formatAmount(item.montoTengo) }} {{ item.monedaTengo }}</p>
               </div>
-              <div class="border border-default rounded-lg p-3">
-                <p class="text-xs text-neutral-500">Monto que recibes</p>
-                <p class="font-bold">{{ Number(item.montoRecibo).toLocaleString() }} {{ item.monedaRecibo }}</p>
+              <div class="rounded-xl border border-default bg-muted/20 p-3.5">
+                <p class="text-[11px] uppercase tracking-wide text-neutral-500 font-semibold">Tú recibes</p>
+                <p class="font-extrabold text-emerald-500 mt-1">{{ formatAmount(item.montoRecibo) }} {{ item.monedaRecibo }}</p>
               </div>
-              <div class="border border-default rounded-lg p-3">
-                <p class="text-xs text-neutral-500">Tipo de cambio</p>
-                <p class="font-bold">{{ Number(item.tipoCambio).toFixed(6) }}</p>
+              <div class="rounded-xl border border-default bg-muted/20 p-3.5">
+                <p class="text-[11px] uppercase tracking-wide text-neutral-500 font-semibold">Tipo de cambio</p>
+                <p class="font-extrabold mt-1 text-neutral-900 dark:text-neutral-100">{{ Number(item.tipoCambio).toFixed(6) }}</p>
               </div>
             </div>
 
-            <div v-if="item.estado === 'Activa'" class="flex justify-end gap-2">
-              <UButton label="Editar" color="neutral" variant="outline" @click="abrirEditar(item)" />
-              <UButton label="Cancelar" color="error" variant="outline" @click="confirmarCancelar(item)" />
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+              <p v-if="item.estado !== 'Activa'" class="text-xs text-neutral-500 font-medium">
+                Esta oferta está en proceso y no puede editarse ni cancelarse.
+              </p>
+
+              <div
+                v-if="item.estado === 'En Proceso'"
+                class="text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                Abrir transacción
+                <UIcon name="i-lucide-arrow-right" class="size-3.5 ml-1 inline-block" />
+              </div>
+
+              <div v-if="item.estado === 'Activa'" class="ml-auto flex justify-end gap-2">
+                <UButton label="Editar" color="neutral" variant="outline" icon="i-lucide-pencil" @click.stop="abrirEditar(item)" />
+                <UButton label="Cancelar" color="error" variant="outline" icon="i-lucide-x" @click.stop="confirmarCancelar(item)" />
+              </div>
             </div>
           </div>
         </div>
