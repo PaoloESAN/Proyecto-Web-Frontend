@@ -9,23 +9,16 @@ definePageMeta({
 const toast = useToast()
 const api = useApi()
 
-const estadoFilter = ref('Todos')
 const page = ref(1)
 const pageSize = 10
 
 const data = ref<TransaccionHistoryResponse | null>(null)
 const loading = ref(false)
 
-function getEstadoParam(val: string) {
-  return val === 'Todos' ? '' : val
-}
-
 async function fetchHistory() {
   loading.value = true
   try {
-    const params: Record<string, any> = { page: page.value, pageSize }
-    const estado = getEstadoParam(estadoFilter.value)
-    if (estado) params.estado = estado
+    const params: Record<string, any> = { page: page.value, pageSize, estado: 'Finalizado' }
     const res = await api<TransaccionHistoryResponse>('/api/transacciones/history', { params })
     data.value = res
   } catch {
@@ -35,7 +28,7 @@ async function fetchHistory() {
   }
 }
 
-const estadoOptions = ['Todos', 'Pendiente', 'Pagado', 'Finalizado', 'Disputa', 'Cancelado']
+
 
 function getEstadoColor(estado: string) {
   switch (estado) {
@@ -60,7 +53,7 @@ function irATransaccion(id: number) {
   navigateTo(`/transaction/${id}`)
 }
 
-watch(estadoFilter, () => { page.value = 1; fetchHistory() })
+
 
 function totalPages() {
   return data.value?.totalPaginas || 1
@@ -75,11 +68,9 @@ onMounted(() => {
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
     <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
-        <div class="p-5 border-b border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div class="flex gap-3 items-center">
-            <USelect v-model="estadoFilter" :items="estadoOptions" class="w-44" />
-          </div>
-          <UButton label="Buscar" color="primary" :loading="loading" @click="fetchHistory" />
+        <div class="p-5 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+          <p class="text-sm text-neutral-500">Mostrando solo transacciones completadas.</p>
+          <UButton label="Actualizar" color="primary" :loading="loading" @click="fetchHistory" />
         </div>
 
         <div class="overflow-x-auto">
@@ -132,7 +123,7 @@ onMounted(() => {
               <tr v-if="!loading && (!data?.datos || data.datos.length === 0)">
                 <td colspan="9" class="text-center py-12 text-neutral-400">
                   <UIcon name="i-lucide-receipt" class="size-10 mx-auto mb-2" />
-                  <p>No se encontraron transacciones</p>
+                  <p>No se encontraron transacciones completadas</p>
                 </td>
               </tr>
             </tbody>

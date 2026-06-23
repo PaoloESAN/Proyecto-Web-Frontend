@@ -61,12 +61,15 @@ onMounted(async () => {
   await fetchAccounts()
 })
 
+const targetCurrency = computed(() => offer.value?.monedaRecibo ?? '')
+
 const metodosPagoOptions = computed(() => {
-  const targetCurrency = offer.value?.monedaRecibo
   return metodosPago.value
-    .filter(m => m.tipoMoneda === targetCurrency)
+    .filter(m => m.tipoMoneda === targetCurrency.value)
     .map(m => ({ label: `${m.banco} - ${m.numeroCuenta} (${m.tipoMoneda})`, value: m.metodoPagoId }))
 })
+
+const hasMatchingAccounts = computed(() => metodosPagoOptions.value.length > 0)
 
 const schema = z.object({
   metodoPagoId: z.number({ message: 'Selecciona una cuenta bancaria' })
@@ -82,6 +85,15 @@ async function onSubmit(_event: FormSubmitEvent<any>) {
 
   if (isOwnOffer.value) {
     toast.add({ title: 'Operación inválida', description: 'No puedes tomar tu propia oferta.', color: 'error' })
+    return
+  }
+
+  if (!hasMatchingAccounts.value) {
+    toast.add({
+      title: 'Cuenta no disponible',
+      description: `No tienes cuentas registradas en ${targetCurrency.value}. Agrega una en tu perfil.`,
+      color: 'warning'
+    })
     return
   }
 
@@ -142,6 +154,22 @@ async function executeTransaction() {
     </div>
 
     <div v-else-if="offer" class="max-w-3xl mx-auto space-y-4">
+      <div class="flex items-center justify-between text-sm text-neutral-500">
+        <div class="inline-flex items-center gap-2">
+          <NuxtLink to="/marketplace" class="hover:text-primary transition-colors">Marketplace</NuxtLink>
+          <UIcon name="i-lucide-chevron-right" class="size-4" />
+          <span class="text-neutral-700 dark:text-neutral-200 font-medium">Oferta #{{ offer.ofertaId }}</span>
+        </div>
+        <UButton
+          label="Volver"
+          icon="i-lucide-arrow-left"
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          @click="navigateTo('/marketplace')"
+        />
+      </div>
+
       <div class="bg-white dark:bg-neutral-900 border border-default rounded-xl p-6 space-y-3">
         <h1 class="text-xl font-bold">Oferta #{{ offer.ofertaId }}</h1>
         <p class="text-sm text-neutral-500">{{ offer.tipoOperacion }} · {{ offer.monedaTengo }} → {{ offer.monedaRecibo }}</p>
@@ -164,11 +192,37 @@ async function executeTransaction() {
 
       <div class="bg-white dark:bg-neutral-900 border border-default rounded-xl p-6">
         <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
-          <UFormField name="metodoPagoId" :label="`Tu cuenta para recibir (${offer.monedaRecibo})`" required>
+          <UFormField v-if="hasMatchingAccounts" name="metodoPagoId" :label="`Tu cuenta para recibir (${offer.monedaRecibo})`" required>
             <USelect v-model.number="state.metodoPagoId" :items="metodosPagoOptions" placeholder="Selecciona una cuenta" class="w-full" />
           </UFormField>
 
-          <UButton type="submit" label="Iniciar transacción" color="primary" :loading="transactionLoading" :disabled="isOwnOffer" />
+          <UAlert
+            v-else
+            color="warning"
+            variant="soft"
+            icon="i-lucide-alert-triangle"
+            :title="`No tienes cuentas en ${offer.monedaRecibo}`"
+            :description="`Para tomar esta oferta necesitas registrar una cuenta bancaria en ${offer.monedaRecibo}.`"
+          />
+
+          <div class="flex items-center gap-2">
+            <UButton
+              v-if="hasMatchingAccounts"
+              type="submit"
+              label="Iniciar transacción"
+              color="primary"
+              :loading="transactionLoading"
+              :disabled="isOwnOffer"
+            />
+            <UButton
+              v-if="!hasMatchingAccounts"
+              label="Agregar cuenta"
+              color="warning"
+              variant="outline"
+              icon="i-lucide-wallet"
+              @click="navigateTo('/profile')"
+            />
+          </div>
         </UForm>
       </div>
     </div>

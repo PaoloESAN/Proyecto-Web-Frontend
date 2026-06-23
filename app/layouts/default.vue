@@ -6,6 +6,7 @@ const authStore = useAuthStore();
 const open = ref(true);
 const colorMode = useColorMode();
 const route = useRoute();
+const router = useRouter();
 
 // Definición de links principales
 function getItems(state: "collapsed" | "expanded") {
@@ -16,15 +17,26 @@ function getItems(state: "collapsed" | "expanded") {
       to: "/marketplace",
     },
     {
-      label: "Mis Ofertas",
+      label: "Ofertas",
       icon: "i-lucide-tag",
-      to: "/my-offers",
+      children: [
+        {
+          label: "Mis transacciones",
+          icon: "i-lucide-inbox",
+          to: "/my-transactions",
+        },
+        {
+          label: "Mis ofertas",
+          icon: "i-lucide-send",
+          to: { path: "/my-offers", query: { view: "made" } },
+        },
+      ],
     },
     {
-      label: "Transacciones",
+      label: "Historial",
       icon: "i-lucide-history",
       to: "/history",
-    },
+    }
   ];
 
   if (authStore.usuario?.rol === "Administrador") {
@@ -47,6 +59,20 @@ function getItems(state: "collapsed" | "expanded") {
 async function handleLogout() {
   authStore.logout();
   await navigateTo("/login");
+}
+
+function handleBack() {
+  if (import.meta.client && window.history.length > 1) {
+    router.back();
+    return;
+  }
+
+  if (route.meta.back) {
+    navigateTo(route.meta.back as string);
+    return;
+  }
+
+  navigateTo("/marketplace");
 }
 
 // Menú desplegable del usuario
@@ -258,7 +284,7 @@ const userItems = computed<DropdownMenuItem[][]>(() => {
             variant="ghost"
             aria-label="Volver"
             class="cursor-pointer"
-            @click="navigateTo(route.meta.back as string)"
+            @click="handleBack"
           />
           <span v-if="route.meta.back" class="text-sm font-bold text-neutral-300 dark:text-neutral-700">/</span>
           <span class="font-bold text-base sm:text-lg tracking-tight text-neutral-900 dark:text-white">
