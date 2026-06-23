@@ -115,19 +115,19 @@ function onFileChange(event: Event) {
   const input = event.target as HTMLInputElement
   if (!input.files || input.files.length === 0) return
   const file = input.files[0]
-  
+
   const validTypes = ['image/jpeg', 'image/png']
   if (!validTypes.includes(file.type)) {
     toast.add({ title: 'Error', description: 'La imagen debe ser JPG o PNG', color: 'error', icon: 'i-lucide-alert-circle' })
     return
   }
-  
+
   const maxSize = 5 * 1024 * 1024 // 5MB
   if (file.size > maxSize) {
     toast.add({ title: 'Error', description: 'La imagen debe pesar menos de 5MB', color: 'error', icon: 'i-lucide-alert-circle' })
     return
   }
-  
+
   selectedFile.value = file
   const reader = new FileReader()
   reader.onload = (e) => {
@@ -248,8 +248,8 @@ onMounted(() => {
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50">
-    <main class="max-w-5xl mx-auto px-6 py-8 space-y-8">
-      <div class="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8">
+    <main class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div class="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-8">
         <aside class="space-y-6">
           <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 flex flex-col items-center text-center shadow-sm space-y-4">
             <div class="flex items-center justify-center">

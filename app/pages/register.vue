@@ -83,10 +83,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
 <template>
   <div
-    class="flex min-h-dvh items-center justify-center bg-linear-to-tr from-neutral-100 to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 px-4 py-8"
+    class="flex min-h-dvh items-center justify-center bg-linear-to-br from-neutral-100 via-neutral-50 to-primary-50/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/20 px-6 py-10"
   >
     <UCard
-      class="w-full max-w-lg backdrop-blur-md bg-white/90 dark:bg-neutral-900/90 border border-neutral-200/50 dark:border-neutral-800/50 shadow-2xl rounded-2xl transition-all duration-300 hover:shadow-primary/5 dark:hover:shadow-primary/10"
+      class="w-full max-w-2xl backdrop-blur-md bg-white/90 dark:bg-neutral-900/90 border border-neutral-200/50 dark:border-neutral-800/50 shadow-2xl rounded-2xl transition-all duration-300 hover:shadow-primary/5 dark:hover:shadow-primary/10"
       :ui="{ body: 'p-6 sm:p-8' }"
     >
       <template #header>
@@ -95,7 +95,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             <UIcon name="i-lucide-user-plus" class="size-6 animate-pulse" />
           </div>
           <h1
-            class="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white"
+            class="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white"
           >
             Crea tu cuenta
           </h1>

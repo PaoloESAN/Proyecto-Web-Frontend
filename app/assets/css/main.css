@@ -3,7 +3,7 @@
 
 /* */
 @theme {
-    --font-sans: 'Inter', sans-serif;
+    --font-sans: "Inter", sans-serif;
 }
 
 :root {
@@ -11,6 +11,16 @@
 }
 
 @layer base {
+    html,
+    body,
+    #__nuxt {
+        min-height: 100%;
+    }
+
+    body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
 
     button:not(:disabled),
     [role="button"]:not(:disabled) {

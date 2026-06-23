@@ -56,7 +56,7 @@ async function fetchAccounts() {
   try {
     const response = await api<MetodoPagoResponse[]>("/api/users/metodos-pago");
     metodosPago.value = response;
-    
+
     // Auto-select first account matching the target currency of the offer
     const targetCurrency = offer.value?.moneda || "PEN";
     const matchingAccount = response.find((m) => m.tipoMoneda === targetCurrency);
@@ -235,7 +235,7 @@ const isOwnOffer = computed(() => {
       class="bg-white dark:bg-neutral-900 border-b border-default shrink-0"
     >
       <div
-        class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between"
+        class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between"
       >
         <div class="flex items-center gap-3">
           <UButton
@@ -271,7 +271,7 @@ const isOwnOffer = computed(() => {
     </header>
 
     <!-- Contenido Principal -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+    <main class="flex-1 max-w-screen-2xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Esqueleto de Carga -->
       <div v-if="loading" class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="md:col-span-2 space-y-6">
@@ -306,7 +306,7 @@ const isOwnOffer = computed(() => {
       <!-- Contenido Principal de la Oferta (2 columnas, garantizando que offer no sea null) -->
       <div
         v-else-if="offer"
-        class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-start"
+        class="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-8 items-start"
       >
         <!-- Detalles Generales (Columna Izquierda / Ancha) -->
         <div class="space-y-6">

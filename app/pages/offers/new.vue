@@ -91,7 +91,7 @@ onMounted(fetchMetodosPago)
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50">
-    <main class="max-w-3xl mx-auto px-6 py-10">
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm">
         <div class="p-8">
           <UForm :schema="schema" :state="state" class="space-y-8" @submit="onSubmit">
@@ -196,7 +196,7 @@ onMounted(fetchMetodosPago)
 
               <div class="p-4 bg-neutral-50/50 dark:bg-neutral-800/20 rounded-xl border border-neutral-100/50 dark:border-neutral-800/50">
                 <UFormField name="tipoCambio" label="Tipo de Cambio" required description="Precio por unidad de la moneda seleccionada">
-                  <div class="relative max-w-xs">
+                  <div class="relative w-full sm:max-w-sm">
                     <UInput v-model="state.tipoCambio" type="number" step="0.01" placeholder="Ej: 3.75" class="w-full">
                       <template #leading>
                         <span class="text-muted text-xs font-medium">S/</span>

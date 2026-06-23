@@ -73,7 +73,7 @@ onMounted(() => {
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
-    <main class="max-w-7xl mx-auto px-6 py-8">
+    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
         <div class="p-5 border-b border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div class="flex gap-3 items-center">

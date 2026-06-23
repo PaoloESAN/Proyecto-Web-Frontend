@@ -110,7 +110,7 @@ onMounted(fetchMyOffers)
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
-    <main class="max-w-7xl mx-auto px-6 py-8 space-y-6">
+    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div class="flex items-center justify-end mb-4">
         <UButton label="Nueva Oferta" color="primary" icon="i-lucide-plus" @click="navigateTo('/offers/new')" class="font-semibold cursor-pointer" />
       </div>
@@ -136,52 +136,80 @@ onMounted(fetchMyOffers)
       </div>
 
       <div v-else class="grid gap-4">
-        <div
+        <button
           v-for="item in offers"
           :key="item.ofertaId"
+          type="button"
+          :disabled="item.estado !== 'Activa'"
           :class="[
-            'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 transition-all',
-            item.estado === 'Activa' ? 'cursor-pointer hover:border-primary-500/50 hover:shadow-sm' : 'opacity-85'
+            'group w-full text-left rounded-xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden bg-white/95 dark:bg-neutral-900/95 transition-transform transition-colors duration-200',
+            item.estado === 'Activa'
+              ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-lg hover:shadow-neutral-900/5 dark:hover:shadow-black/20'
+              : 'opacity-85 cursor-default',
           ]"
-          @click="item.estado === 'Activa' ? abrirEditar(item) : null"
+          @click="abrirEditar(item)"
         >
-          <div class="flex items-start justify-between mb-3">
-            <div class="flex items-center gap-2">
-              <UBadge :color="item.tipoOperacion === 'Venta' ? 'error' : 'success'" variant="soft" size="sm">
-                {{ item.tipoOperacion }}
-              </UBadge>
-              <span class="text-lg font-bold">{{ item.moneda }}</span>
-            </div>
-            <span class="text-lg font-mono font-semibold">
-              TC {{ Number(item.tipoCambio).toFixed(2) }}
-            </span>
-          </div>
+          <div
+            class="h-1"
+            :class="item.tipoOperacion === 'Venta' ? 'bg-error/70' : 'bg-success/70'"
+          />
 
-          <div class="grid grid-cols-3 gap-4 text-sm mb-4">
-            <div>
-              <p class="text-neutral-400 text-xs">Total</p>
-              <p class="font-medium">{{ Number(item.montoTotal).toLocaleString() }} {{ item.moneda }}</p>
-            </div>
-            <div>
-              <p class="text-neutral-400 text-xs">Mínimo</p>
-              <p class="font-medium">{{ Number(item.montoMinimo).toLocaleString() }} {{ item.moneda }}</p>
-            </div>
-            <div>
-              <p class="text-neutral-400 text-xs">Máximo</p>
-              <p class="font-medium">{{ Number(item.montoMaximo).toLocaleString() }} {{ item.moneda }}</p>
-            </div>
-          </div>
+          <div class="p-5 space-y-4">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                  <UBadge :color="item.tipoOperacion === 'Venta' ? 'error' : 'success'" variant="soft" size="sm">
+                    {{ item.tipoOperacion }}
+                  </UBadge>
+                  <span class="text-xs text-neutral-400">Oferta #{{ item.ofertaId }}</span>
+                </div>
+                <h3 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">{{ item.moneda }}</h3>
+              </div>
 
-          <div class="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-neutral-800">
-            <div class="flex items-center gap-2 text-sm">
-              <UIcon name="i-lucide-building" class="size-4 text-neutral-400" />
-              <span>{{ item.metodoPago?.banco ?? 'Sin banco asignado' }}</span>
+              <div class="text-right shrink-0">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Tipo de cambio</p>
+                <p class="text-2xl font-black tracking-tight text-neutral-900 dark:text-white">
+                  {{ Number(item.tipoCambio).toFixed(2) }}
+                </p>
+              </div>
             </div>
-            <UBadge :color="item.estado === 'Activa' ? 'primary' : 'warning'" variant="subtle" size="sm">
-              {{ item.estado }}
-            </UBadge>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="rounded-lg border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 p-3">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Total disponible</p>
+                <p class="text-base font-bold text-neutral-900 dark:text-white mt-1">{{ Number(item.montoTotal).toLocaleString() }} {{ item.moneda }}</p>
+              </div>
+              <div class="rounded-lg border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 p-3">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Mínimo por operación</p>
+                <p class="text-base font-bold text-neutral-900 dark:text-white mt-1">{{ Number(item.montoMinimo).toLocaleString() }} {{ item.moneda }}</p>
+              </div>
+              <div class="rounded-lg border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 p-3">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Máximo por operación</p>
+                <p class="text-base font-bold text-neutral-900 dark:text-white mt-1">{{ Number(item.montoMaximo).toLocaleString() }} {{ item.moneda }}</p>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-neutral-200/80 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-3">
+              <div class="inline-flex items-center gap-1 text-sm text-neutral-500 dark:text-neutral-400">
+                <UIcon name="i-lucide-building" class="size-4" />
+                <span>{{ item.metodoPago?.banco ?? 'Sin banco asignado' }}</span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <UBadge :color="item.estado === 'Activa' ? 'primary' : 'warning'" variant="subtle" size="sm">
+                  {{ item.estado }}
+                </UBadge>
+                <span
+                  v-if="item.estado === 'Activa'"
+                  class="inline-flex items-center gap-1 text-primary text-xs font-semibold"
+                >
+                  Editar oferta
+                  <UIcon name="i-lucide-pencil" class="size-3.5" />
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
+        </button>
       </div>
     </main>
 

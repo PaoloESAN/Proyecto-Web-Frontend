@@ -81,7 +81,7 @@ onMounted(fetchAlertas)
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
-    <main class="max-w-5xl mx-auto px-6 py-8 space-y-6">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div class="flex items-center justify-between">
         <p class="text-sm text-neutral-500">Recibe notificaciones cuando el tipo de cambio alcance el valor deseado.</p>
         <UButton label="Nueva alerta" color="primary" icon="i-lucide-plus" @click="modalOpen = true" />

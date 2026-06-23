@@ -129,7 +129,7 @@ const userItems = computed<DropdownMenuItem[][]>(() => {
 
 <template>
   <div
-    class="flex h-dvh overflow-hidden bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50"
+    class="flex h-dvh overflow-hidden bg-neutral-100/60 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50"
   >
     <!-- USidebar component from Nuxt UI v4 -->
     <USidebar
@@ -138,8 +138,8 @@ const userItems = computed<DropdownMenuItem[][]>(() => {
       rail
       :ui="{
         container: 'h-full',
-        inner: 'bg-elevated/25 divide-transparent',
-        body: 'py-0',
+        inner: 'bg-elevated/55 backdrop-blur-sm divide-transparent border-r border-default/50',
+        body: 'py-1',
       }"
     >
       <!-- Slot #header: Brand logo -->
@@ -161,13 +161,45 @@ const userItems = computed<DropdownMenuItem[][]>(() => {
 
       <!-- Slot #default: Navigation Menu -->
       <template #default="{ state }">
-        <UNavigationMenu
-          :key="state"
-          :items="getItems(state)"
-          orientation="vertical"
-          class="w-full"
-          :ui="{ link: 'p-1.5 overflow-hidden' }"
-        />
+        <div class="h-full flex flex-col gap-4">
+          <UNavigationMenu
+            :key="state"
+            :items="getItems(state)"
+            orientation="vertical"
+            class="w-full"
+            :ui="{ link: 'p-1.5 overflow-hidden' }"
+          />
+
+          <div v-if="state === 'expanded'" class="mt-auto px-2 pb-2 space-y-3">
+            <div class="rounded-xl border border-default bg-muted/40 p-3 space-y-2">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-muted">Accesos rápidos</p>
+              <UButton
+                label="Crear oferta"
+                icon="i-lucide-plus"
+                color="primary"
+                size="sm"
+                block
+                @click="navigateTo('/offers/new')"
+              />
+              <UButton
+                label="Configurar alertas"
+                icon="i-lucide-bell-ring"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                block
+                @click="navigateTo('/alerts')"
+              />
+            </div>
+
+            <div class="rounded-xl border border-default bg-elevated/70 p-3">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">Tip P2P</p>
+              <p class="text-xs text-toned leading-relaxed">
+                Revisa moneda y banco antes de iniciar una transacción para evitar errores en el envío.
+              </p>
+            </div>
+          </div>
+        </div>
       </template>
 
       <!-- Slot #footer: User profile dropdown trigger -->
@@ -207,7 +239,7 @@ const userItems = computed<DropdownMenuItem[][]>(() => {
     <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
       <!-- Navbar superior -->
       <header
-        class="h-16 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 flex items-center justify-between shrink-0 sticky top-0 z-30"
+        class="h-16 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-800 px-4 sm:px-6 lg:px-8 flex items-center justify-between shrink-0 sticky top-0 z-30"
       >
         <div class="flex items-center gap-3">
           <UButton
@@ -224,18 +256,19 @@ const userItems = computed<DropdownMenuItem[][]>(() => {
             icon="i-lucide-arrow-left"
             color="neutral"
             variant="ghost"
+            aria-label="Volver"
             class="cursor-pointer"
             @click="navigateTo(route.meta.back as string)"
           />
           <span v-if="route.meta.back" class="text-sm font-bold text-neutral-300 dark:text-neutral-700">/</span>
-          <span class="font-bold text-base tracking-tight text-neutral-900 dark:text-white">
+          <span class="font-bold text-base sm:text-lg tracking-tight text-neutral-900 dark:text-white">
             {{ route.meta.title || 'FinTech P2P Intercambio' }}
           </span>
         </div>
       </header>
 
       <!-- Main Page Slot (This is the container that scrolls!) -->
-      <main class="flex-1 overflow-y-auto min-w-0 bg-neutral-50 dark:bg-neutral-950">
+      <main class="flex-1 overflow-y-auto min-w-0 bg-gradient-to-b from-neutral-50 to-neutral-100/60 dark:from-neutral-950 dark:to-neutral-950">
         <slot />
       </main>
     </div>

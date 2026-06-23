@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { GetMarketplaceOffersResponse, GetOffersResponse, MatchesResponse, UsuarioOfertasResponse } from '~/types'
+import type {
+  GetMarketplaceOffersResponse,
+  GetOffersResponse,
+  MatchesResponse,
+  UsuarioOfertasResponse,
+} from "~/types";
 
 definePageMeta({
   middleware: ["auth"],
@@ -37,7 +42,10 @@ async function fetchOfertas() {
   loading.value = true;
   try {
     const params = { page: 1, pageSize: 100 }; // Traer hasta 100 ofertas para filtrado local fluido
-    const res = await api<GetMarketplaceOffersResponse>("/api/ofertas/marketplace", { params });
+    const res = await api<GetMarketplaceOffersResponse>(
+      "/api/ofertas/marketplace",
+      { params },
+    );
     ofertasRaw.value = res.datos ?? [];
     totalRaw.value = res.total ?? 0;
   } catch {
@@ -60,11 +68,12 @@ const bancosDisponibles = computed(() => {
 
 // Filtrado local en el cliente en tiempo real
 const ofertasFiltradas = computed(() => {
-  const base = mostrarSoloMatches.value && matchingOfferId.value > 0
-    ? ofertasMatches.value
-    : ofertasRaw.value
+  const base =
+    mostrarSoloMatches.value && matchingOfferId.value > 0
+      ? ofertasMatches.value
+      : ofertasRaw.value;
 
-  return base.filter(item => {
+  return base.filter((item) => {
     // 1. Filtrar por Monedas seleccionadas
     if (
       monedasSeleccionadas.value.length > 0 &&
@@ -226,8 +235,10 @@ onMounted(() => {
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
-    <div class="max-w-7xl mx-auto px-6 py-8 flex gap-8">
-      <aside class="w-72 shrink-0 space-y-6">
+    <div
+      class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex gap-8 xl:gap-10"
+    >
+      <aside class="w-80 shrink-0 space-y-6">
         <div
           class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 space-y-5"
         >
@@ -238,7 +249,14 @@ onMounted(() => {
               Filtros
             </h2>
             <UButton
-              v-if="monedasSeleccionadas.length > 0 || tipoOperacion || montoMin !== undefined || montoMax !== undefined || calificacionMin > 0 || (bancoSeleccionado && bancoSeleccionado !== 'TODOS')"
+              v-if="
+                monedasSeleccionadas.length > 0 ||
+                tipoOperacion ||
+                montoMin !== undefined ||
+                montoMax !== undefined ||
+                calificacionMin > 0 ||
+                (bancoSeleccionado && bancoSeleccionado !== 'TODOS')
+              "
               label="Limpiar todo"
               color="neutral"
               variant="link"
@@ -387,18 +405,28 @@ onMounted(() => {
         </div>
 
         <!-- Tarjeta de Matching Automático -->
-        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 space-y-4">
+        <div
+          class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 space-y-4"
+        >
           <div class="flex items-center gap-2 text-primary-500">
             <UIcon name="i-lucide-sparkles" class="size-5" />
-            <h2 class="font-bold text-xs uppercase tracking-wider text-neutral-900 dark:text-white">Matching Automático</h2>
+            <h2
+              class="font-bold text-xs uppercase tracking-wider text-neutral-900 dark:text-white"
+            >
+              Matching Automático
+            </h2>
           </div>
-          
+
           <p class="text-xs text-neutral-400">
-            Selecciona una de tus ofertas activas para encontrar de forma instantánea coincidencias de intercambio.
+            Selecciona una de tus ofertas activas para encontrar de forma
+            instantánea coincidencias de intercambio.
           </p>
 
           <div class="space-y-2">
-            <label class="text-xs font-semibold text-neutral-500 dark:text-neutral-400">Tu Oferta Activa</label>
+            <label
+              class="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
+              >Tu Oferta Activa</label
+            >
             <USelect
               v-model.number="matchingOfferId"
               :items="misOfertasOptions"
@@ -407,9 +435,15 @@ onMounted(() => {
               size="sm"
             />
           </div>
-          
-          <div v-if="loadingMatches" class="flex items-center justify-center gap-2 py-1 text-xs text-neutral-400">
-            <UIcon name="i-lucide-loader-2" class="size-4 animate-spin text-primary" />
+
+          <div
+            v-if="loadingMatches"
+            class="flex items-center justify-center gap-2 py-1 text-xs text-neutral-400"
+          >
+            <UIcon
+              name="i-lucide-loader-2"
+              class="size-4 animate-spin text-primary"
+            />
             <span>Buscando matches...</span>
           </div>
         </div>
@@ -422,11 +456,19 @@ onMounted(() => {
           class="bg-primary-50 dark:bg-primary-950/20 border border-primary-200 dark:border-primary-800/50 rounded-xl p-4 flex items-center justify-between gap-4"
         >
           <div class="flex items-start gap-3">
-            <UIcon name="i-lucide-sparkles" class="size-5 text-primary-500 shrink-0 mt-0.5" />
+            <UIcon
+              name="i-lucide-sparkles"
+              class="size-5 text-primary-500 shrink-0 mt-0.5"
+            />
             <div>
-              <h3 class="text-sm font-semibold text-primary-900 dark:text-primary-200">Matching Automático Activo</h3>
+              <h3
+                class="text-sm font-semibold text-primary-900 dark:text-primary-200"
+              >
+                Matching Automático Activo
+              </h3>
               <p class="text-xs text-primary-700 dark:text-primary-400 mt-0.5">
-                Mostrando únicamente las ofertas de otros usuarios que son compatibles con tu oferta seleccionada.
+                Mostrando únicamente las ofertas de otros usuarios que son
+                compatibles con tu oferta seleccionada.
               </p>
             </div>
           </div>
@@ -452,7 +494,10 @@ onMounted(() => {
                 (filtradas de un total de {{ totalRaw }})
               </span>
             </template>
-            <span v-if="loadingMatches" class="ml-2 text-xs text-primary-500 font-medium">
+            <span
+              v-if="loadingMatches"
+              class="ml-2 text-xs text-primary-500 font-medium"
+            >
               Buscando coincidencias...
             </span>
           </p>
@@ -509,72 +554,143 @@ onMounted(() => {
             v-for="item in ofertasPaginadas"
             :key="item.ofertaId"
             :to="`/offers/${item.ofertaId}`"
-            class="block bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 hover:border-primary-500/50 hover:shadow-sm transition-all duration-200"
+            class="group block rounded-xl border border-neutral-200/80 dark:border-neutral-800 overflow-hidden bg-white/95 dark:bg-neutral-900/95 transition-colors duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-neutral-900/5 dark:hover:shadow-black/20"
           >
-            <div class="flex items-start justify-between mb-3">
-              <div class="flex items-center gap-2">
-                <UBadge
-                  :color="item.tipoOperacion === 'Venta' ? 'error' : 'success'"
-                  variant="soft"
-                  size="sm"
-                >
-                  {{ item.tipoOperacion }}
-                </UBadge>
-                <span class="text-lg font-bold">{{ item.moneda }}</span>
-              </div>
-              <span
-                class="text-lg font-mono font-semibold text-neutral-900 dark:text-neutral-100"
-              >
-                TC {{ Number(item.tipoCambio).toFixed(2) }}
-              </span>
-            </div>
-
-            <div class="grid grid-cols-3 gap-4 text-sm mb-4">
-              <div>
-                <p class="text-neutral-400 text-xs">Total</p>
-                <p class="font-medium">
-                  {{ Number(item.montoTotal).toLocaleString() }}
-                  {{ item.moneda }}
-                </p>
-              </div>
-              <div>
-                <p class="text-neutral-400 text-xs">Mínimo</p>
-                <p class="font-medium">
-                  {{ Number(item.montoMinimo).toLocaleString() }}
-                  {{ item.moneda }}
-                </p>
-              </div>
-              <div>
-                <p class="text-neutral-400 text-xs">Máximo</p>
-                <p class="font-medium">
-                  {{ Number(item.montoMaximo).toLocaleString() }}
-                  {{ item.moneda }}
-                </p>
-              </div>
-            </div>
-
             <div
-              class="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-neutral-800"
-            >
-              <div class="flex items-center gap-2 text-sm">
-                <UIcon name="i-lucide-user" class="size-4 text-neutral-400" />
-                <span class="font-medium"
-                  >{{ item.usuarioCreador?.nombres }}
-                  {{ item.usuarioCreador?.apellidos }}</span
-                >
-                <span
-                  v-if="item.usuarioCreador?.calificacion"
-                  class="inline-flex items-center gap-0.5 text-xs text-amber-500 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded"
-                >
-                  <UIcon name="i-lucide-star" class="size-3 fill-amber-500" />
-                  {{ Number(item.usuarioCreador.calificacion).toFixed(1) }}
-                </span>
+              class="h-1"
+              :class="
+                item.tipoOperacion === 'Venta' ? 'bg-error/70' : 'bg-success/70'
+              "
+            />
+
+            <div class="p-5 space-y-4">
+              <div class="flex items-start justify-between gap-4">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 mb-1.5">
+                    <UBadge
+                      :color="
+                        item.tipoOperacion === 'Venta' ? 'error' : 'success'
+                      "
+                      variant="soft"
+                      size="sm"
+                    >
+                      {{ item.tipoOperacion }}
+                    </UBadge>
+                    <span class="text-xs text-neutral-400"
+                      >Oferta #{{ item.ofertaId }}</span
+                    >
+                  </div>
+                  <h3
+                    class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white"
+                  >
+                    {{ item.moneda }}
+                  </h3>
+                </div>
+
+                <div class="text-right shrink-0">
+                  <p
+                    class="text-[11px] font-semibold tracking-wide uppercase text-neutral-400"
+                  >
+                    Tipo de cambio
+                  </p>
+                  <p
+                    class="text-2xl font-black tracking-tight text-neutral-900 dark:text-white"
+                  >
+                    {{ Number(item.tipoCambio).toFixed(2) }}
+                  </p>
+                </div>
               </div>
-              <div class="flex items-center gap-1 text-sm text-neutral-500">
-                <UIcon name="i-lucide-building" class="size-4" />
-                <span>{{
-                  item.metodoPago?.banco ?? "Sin banco asignado"
-                }}</span>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div
+                  class="rounded-lg border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 p-3"
+                >
+                  <p
+                    class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400"
+                  >
+                    Total disponible
+                  </p>
+                  <p
+                    class="text-base font-bold text-neutral-900 dark:text-white mt-1"
+                  >
+                    {{ Number(item.montoTotal).toLocaleString() }}
+                    {{ item.moneda }}
+                  </p>
+                </div>
+                <div
+                  class="rounded-lg border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 p-3"
+                >
+                  <p
+                    class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400"
+                  >
+                    Mínimo por operación
+                  </p>
+                  <p
+                    class="text-base font-bold text-neutral-900 dark:text-white mt-1"
+                  >
+                    {{ Number(item.montoMinimo).toLocaleString() }}
+                    {{ item.moneda }}
+                  </p>
+                </div>
+                <div
+                  class="rounded-lg border border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-900/40 p-3"
+                >
+                  <p
+                    class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400"
+                  >
+                    Máximo por operación
+                  </p>
+                  <p
+                    class="text-base font-bold text-neutral-900 dark:text-white mt-1"
+                  >
+                    {{ Number(item.montoMaximo).toLocaleString() }}
+                    {{ item.moneda }}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                class="pt-3 border-t border-neutral-200/80 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-3"
+              >
+                <div class="flex items-center gap-2 text-sm min-w-0">
+                  <UIcon
+                    name="i-lucide-user"
+                    class="size-4 text-neutral-400 shrink-0"
+                  />
+                  <span
+                    class="font-semibold text-neutral-800 dark:text-neutral-100 truncate"
+                  >
+                    {{ item.usuarioCreador?.nombres }}
+                    {{ item.usuarioCreador?.apellidos }}
+                  </span>
+                  <span
+                    v-if="item.usuarioCreador?.calificacion"
+                    class="inline-flex items-center gap-1 text-xs text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded"
+                  >
+                    <UIcon name="i-lucide-star" class="size-3 fill-amber-500" />
+                    {{ Number(item.usuarioCreador.calificacion).toFixed(1) }}
+                  </span>
+                </div>
+
+                <div class="flex items-center gap-3 text-sm">
+                  <div
+                    class="inline-flex items-center gap-1 text-neutral-500 dark:text-neutral-400"
+                  >
+                    <UIcon name="i-lucide-building" class="size-4" />
+                    <span>{{
+                      item.metodoPago?.banco ?? "Sin banco asignado"
+                    }}</span>
+                  </div>
+                  <span
+                    class="inline-flex items-center gap-1 text-primary text-xs font-semibold"
+                  >
+                    Ver detalle
+                    <UIcon
+                      name="i-lucide-arrow-right"
+                      class="size-3.5 transition-transform group-hover:translate-x-0.5"
+                    />
+                  </span>
+                </div>
               </div>
             </div>
           </NuxtLink>
