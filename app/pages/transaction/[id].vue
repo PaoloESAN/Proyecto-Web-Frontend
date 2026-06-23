@@ -10,7 +10,6 @@ import type {
   CalificacionResponse,
   ErrorResponse,
   MetodoPagoResponse,
-  OfertaDetalleResponse,
 } from "~/types";
 
 definePageMeta({
@@ -30,7 +29,6 @@ const selectedAccountId = Number(route.query.accountId);
 
 const loading = ref(true);
 const transaction = ref<TransaccionDetailResponse | null>(null);
-const offer = ref<OfertaDetalleResponse | null>(null);
 const messages = ref<MensajeChatResponse[]>([]);
 const errorMsg = ref<string | null>(null);
 
@@ -100,14 +98,7 @@ async function fetchTransaction() {
     transaction.value = response;
     ratingSubmitted.value = response.yaCalificado || false;
 
-    // Obtener oferta para conocer tipoOperacion
-    try {
-      offer.value = await api<OfertaDetalleResponse>(
-        `/api/ofertas/${response.ofertaId}`,
-      );
-    } catch (offerErr) {
-      console.error("Error al cargar la oferta de la transacción:", offerErr);
-    }
+
   } catch (err: any) {
     if (err.status === 404) {
       errorMsg.value = "La transacción especificada no existe.";
@@ -277,17 +268,26 @@ async function sendChatMessage() {
 }
 
 // Lógica de roles financieros
+const participantPaymentMethod = computed(() => {
+  if (!transaction.value) return null;
+  return (
+    transaction.value.metodoPagoParticipante ||
+    transaction.value.metodoPagoComprador ||
+    null
+  );
+});
+
 const destinationAccount = computed(() => {
   if (!transaction.value) return null;
   return isBuyer.value
     ? transaction.value.instruccionesPago
-    : transaction.value.metodoPagoComprador || null;
+    : participantPaymentMethod.value;
 });
 
 const myReceivingAccount = computed(() => {
   if (!transaction.value) return null;
   return isBuyer.value
-    ? transaction.value.metodoPagoComprador || null
+    ? participantPaymentMethod.value
     : transaction.value.instruccionesPago;
 });
 
@@ -305,74 +305,73 @@ const contraparteConfirmed = computed(() => {
     : transaction.value.confirmadoComprador;
 });
 
-const exactAmountToSend = computed(() => {
-  if (!transaction.value || !destinationAccount.value)
-    return { amount: 0, currency: "" };
-  const accountCurrency = destinationAccount.value.tipoMoneda;
+function getAmountByCurrency(currency: string): number {
+  if (!transaction.value) return 0;
 
-  if (accountCurrency === offer.value?.moneda) {
-    return {
-      amount: transaction.value.montoOperacion,
-      currency: accountCurrency,
-    };
-  } else {
-    return {
-      amount: Number(
-        (
-          transaction.value.montoOperacion *
-          transaction.value.tipoCambioAplicado
-        ).toFixed(2),
-      ),
-      currency: accountCurrency,
-    };
+  if (currency === transaction.value.monedaTengo) {
+    return Number(transaction.value.montoTengo ?? transaction.value.montoOperacion ?? 0);
   }
+
+  if (currency === transaction.value.monedaRecibo) {
+    const montoRecibo = transaction.value.montoRecibo;
+    if (typeof montoRecibo === "number") return Number(montoRecibo);
+
+    return Number(
+      ((transaction.value.montoOperacion ?? 0) * transaction.value.tipoCambioAplicado).toFixed(2),
+    );
+  }
+
+  return 0;
+}
+
+const exactAmountToSend = computed(() => {
+  if (!destinationAccount.value) return { amount: 0, currency: "" };
+
+  const currency = destinationAccount.value.tipoMoneda;
+  return {
+    amount: getAmountByCurrency(currency),
+    currency,
+  };
 });
 
 const exactAmountToReceive = computed(() => {
-  if (!transaction.value || !myReceivingAccount.value)
-    return { amount: 0, currency: "" };
-  const accountCurrency = myReceivingAccount.value.tipoMoneda;
+  if (!myReceivingAccount.value) return { amount: 0, currency: "" };
 
-  if (accountCurrency === offer.value?.moneda) {
-    return {
-      amount: transaction.value.montoOperacion,
-      currency: accountCurrency,
-    };
-  } else {
-    return {
-      amount: Number(
-        (
-          transaction.value.montoOperacion *
-          transaction.value.tipoCambioAplicado
-        ).toFixed(2),
-      ),
-      currency: accountCurrency,
-    };
-  }
+  const currency = myReceivingAccount.value.tipoMoneda;
+  return {
+    amount: getAmountByCurrency(currency),
+    currency,
+  };
 });
 
 // Confirmar recepción del dinero (Solo Vendedor)
 async function confirmReceipt() {
   confirmingReceipt.value = true;
   try {
-    await api<ConfirmReceiptResponse>(
+    const res = await api<ConfirmReceiptResponse>(
       `/api/transacciones/${transactionId}/confirm`,
       {
         method: "POST",
       },
     );
+
+    const finalizada = res?.estado === "Finalizado";
+
     toast.add({
-      title: "Transacción Finalizada",
-      description: "Has confirmado la recepción del pago.",
+      title: finalizada ? "Transacción finalizada" : "Pago confirmado",
+      description: finalizada
+        ? "Ambas partes confirmaron. La transacción se cerró correctamente."
+        : "Tu confirmación fue registrada. Falta la confirmación de la contraparte.",
       color: "success",
       icon: "i-lucide-check-circle",
     });
+
     await fetchTransaction();
   } catch (err: any) {
     const errorData = err.data as ErrorResponse | undefined;
     toast.add({
       title: "Error al confirmar",
-      description: errorData?.mensaje || "No se pudo finalizar la transacción.",
+      description: errorData?.mensaje || "No se pudo registrar la confirmación.",
       color: "error",
     });
   } finally {

@@ -143,104 +143,165 @@ async function executeTransaction() {
 </script>
 
 <template>
-  <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 p-6">
-    <div v-if="loading" class="max-w-3xl mx-auto">
-      <USkeleton class="h-56 rounded-xl" />
-    </div>
-
-    <div v-else-if="errorMsg" class="max-w-3xl mx-auto bg-white dark:bg-neutral-900 border border-default rounded-xl p-6 text-center">
-      <p class="text-red-500 font-semibold mb-2">Oferta no disponible</p>
-      <p class="text-sm text-neutral-500">{{ errorMsg }}</p>
-    </div>
-
-    <div v-else-if="offer" class="max-w-3xl mx-auto space-y-4">
-      <div class="flex items-center justify-between text-sm text-neutral-500">
-        <div class="inline-flex items-center gap-2">
-          <NuxtLink to="/marketplace" class="hover:text-primary transition-colors">Marketplace</NuxtLink>
-          <UIcon name="i-lucide-chevron-right" class="size-4" />
-          <span class="text-neutral-700 dark:text-neutral-200 font-medium">Oferta #{{ offer.ofertaId }}</span>
-        </div>
-        <UButton
-          label="Volver"
-          icon="i-lucide-arrow-left"
-          color="neutral"
-          variant="ghost"
-          size="xs"
-          @click="navigateTo('/marketplace')"
-        />
+  <div class="min-h-dvh bg-gradient-to-b from-neutral-50 to-neutral-100/70 dark:from-neutral-950 dark:to-neutral-950">
+    <main class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div v-if="loading" class="grid lg:grid-cols-[1.4fr_1fr] gap-6">
+        <USkeleton class="h-72 rounded-2xl" />
+        <USkeleton class="h-72 rounded-2xl" />
       </div>
 
-      <div class="bg-white dark:bg-neutral-900 border border-default rounded-xl p-6 space-y-3">
-        <h1 class="text-xl font-bold">Oferta #{{ offer.ofertaId }}</h1>
-        <p class="text-sm text-neutral-500">{{ offer.tipoOperacion }} · {{ offer.monedaTengo }} → {{ offer.monedaRecibo }}</p>
-
-        <div class="grid sm:grid-cols-3 gap-3">
-          <div class="border border-default rounded-lg p-3">
-            <p class="text-xs text-neutral-500">Tú entregarás</p>
-            <p class="font-bold">{{ Number(offer.montoTengo).toLocaleString() }} {{ offer.monedaTengo }}</p>
-          </div>
-          <div class="border border-default rounded-lg p-3">
-            <p class="text-xs text-neutral-500">Tú recibirás</p>
-            <p class="font-bold">{{ Number(offer.montoRecibo).toLocaleString() }} {{ offer.monedaRecibo }}</p>
-          </div>
-          <div class="border border-default rounded-lg p-3">
-            <p class="text-xs text-neutral-500">Tipo de cambio</p>
-            <p class="font-bold">{{ Number(offer.tipoCambio).toFixed(6) }}</p>
-          </div>
-        </div>
+      <div
+        v-else-if="errorMsg"
+        class="max-w-3xl mx-auto bg-white dark:bg-neutral-900 border border-default rounded-2xl p-8 text-center"
+      >
+        <p class="text-red-500 font-semibold mb-2">Oferta no disponible</p>
+        <p class="text-sm text-neutral-500">{{ errorMsg }}</p>
       </div>
 
-      <div class="bg-white dark:bg-neutral-900 border border-default rounded-xl p-6">
-        <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
-          <UFormField v-if="hasMatchingAccounts" name="metodoPagoId" :label="`Tu cuenta para recibir (${offer.monedaRecibo})`" required>
-            <USelect v-model.number="state.metodoPagoId" :items="metodosPagoOptions" placeholder="Selecciona una cuenta" class="w-full" />
-          </UFormField>
-
-          <UAlert
-            v-else
-            color="warning"
-            variant="soft"
-            icon="i-lucide-alert-triangle"
-            :title="`No tienes cuentas en ${offer.monedaRecibo}`"
-            :description="`Para tomar esta oferta necesitas registrar una cuenta bancaria en ${offer.monedaRecibo}.`"
+      <template v-else-if="offer">
+        <div class="flex items-center justify-between text-sm text-neutral-500">
+          <div class="inline-flex items-center gap-2">
+            <NuxtLink to="/marketplace" class="hover:text-primary transition-colors">Marketplace</NuxtLink>
+            <UIcon name="i-lucide-chevron-right" class="size-4" />
+            <span class="text-neutral-700 dark:text-neutral-200 font-semibold">Oferta #{{ offer.ofertaId }}</span>
+          </div>
+          <UButton
+            label="Volver"
+            icon="i-lucide-arrow-left"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            @click="navigateTo('/marketplace')"
           />
+        </div>
 
-          <div class="flex items-center gap-2">
-            <UButton
-              v-if="hasMatchingAccounts"
-              type="submit"
-              label="Iniciar transacción"
-              color="primary"
-              :loading="transactionLoading"
-              :disabled="isOwnOffer"
-            />
-            <UButton
-              v-if="!hasMatchingAccounts"
-              label="Agregar cuenta"
-              color="warning"
-              variant="outline"
-              icon="i-lucide-wallet"
-              @click="navigateTo('/profile')"
-            />
+        <div class="grid lg:grid-cols-[1.35fr_1fr] gap-6 items-start">
+          <section class="bg-white dark:bg-neutral-900 border border-default rounded-2xl p-6 sm:p-7 space-y-6">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h1 class="text-2xl font-black tracking-tight text-neutral-900 dark:text-white">Oferta #{{ offer.ofertaId }}</h1>
+                <p class="text-sm mt-1 text-neutral-500">
+                  {{ offer.tipoOperacion }} · {{ offer.monedaTengo }} → {{ offer.monedaRecibo }}
+                </p>
+              </div>
+
+              <UBadge
+                :color="offer.estado === 'Activa' ? 'success' : 'warning'"
+                variant="soft"
+                class="font-semibold"
+              >
+                {{ offer.estado }}
+              </UBadge>
+            </div>
+
+            <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              <div class="rounded-xl border border-default bg-muted/20 p-4">
+                <p class="text-xs uppercase tracking-wide text-neutral-500 font-semibold">Tú entregarás</p>
+                <p class="mt-1.5 text-2xl font-black text-rose-500 leading-none">
+                  {{ Number(offer.montoTengo).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                </p>
+                <p class="mt-1 text-sm font-bold text-neutral-700 dark:text-neutral-200">{{ offer.monedaTengo }}</p>
+              </div>
+
+              <div class="rounded-xl border border-default bg-muted/20 p-4">
+                <p class="text-xs uppercase tracking-wide text-neutral-500 font-semibold">Tú recibirás</p>
+                <p class="mt-1.5 text-2xl font-black text-emerald-500 leading-none">
+                  {{ Number(offer.montoRecibo).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                </p>
+                <p class="mt-1 text-sm font-bold text-neutral-700 dark:text-neutral-200">{{ offer.monedaRecibo }}</p>
+              </div>
+
+              <div class="rounded-xl border border-default bg-muted/20 p-4 sm:col-span-2 xl:col-span-1">
+                <p class="text-xs uppercase tracking-wide text-neutral-500 font-semibold">Tipo de cambio</p>
+                <p class="mt-1.5 text-2xl font-black text-neutral-900 dark:text-white leading-none">
+                  {{ Number(offer.tipoCambio).toFixed(6) }}
+                </p>
+                <p class="mt-1 text-xs text-neutral-500">Actualizado al momento de publicar</p>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <p class="text-sm font-semibold text-primary">Resumen rápido</p>
+              <p class="text-sm text-neutral-600 dark:text-neutral-300 mt-1 leading-relaxed">
+                Intercambiarás
+                <strong>{{ Number(offer.montoTengo).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} {{ offer.monedaTengo }}</strong>
+                por
+                <strong>{{ Number(offer.montoRecibo).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} {{ offer.monedaRecibo }}</strong>.
+              </p>
+            </div>
+          </section>
+
+          <section class="bg-white dark:bg-neutral-900 border border-default rounded-2xl p-6 sm:p-7 space-y-4">
+            <div>
+              <h2 class="text-lg font-bold text-neutral-900 dark:text-white">Tomar oferta</h2>
+              <p class="text-sm text-neutral-500 mt-1">Selecciona la cuenta donde deseas recibir {{ offer.monedaRecibo }}.</p>
+            </div>
+
+            <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
+              <UFormField
+                v-if="hasMatchingAccounts"
+                name="metodoPagoId"
+                :label="`Tu cuenta para recibir (${offer.monedaRecibo})`"
+                required
+              >
+                <USelect
+                  v-model.number="state.metodoPagoId"
+                  :items="metodosPagoOptions"
+                  placeholder="Selecciona una cuenta"
+                  class="w-full"
+                />
+              </UFormField>
+
+              <UAlert
+                v-else
+                color="warning"
+                variant="soft"
+                icon="i-lucide-alert-triangle"
+                :title="`No tienes cuentas en ${offer.monedaRecibo}`"
+                :description="`Para tomar esta oferta necesitas registrar una cuenta bancaria en ${offer.monedaRecibo}.`"
+              />
+
+              <div class="flex items-center gap-2 pt-1">
+                <UButton
+                  v-if="hasMatchingAccounts"
+                  type="submit"
+                  label="Iniciar transacción"
+                  color="primary"
+                  size="lg"
+                  block
+                  :loading="transactionLoading"
+                  :disabled="isOwnOffer"
+                />
+                <UButton
+                  v-if="!hasMatchingAccounts"
+                  label="Agregar cuenta"
+                  color="warning"
+                  variant="outline"
+                  icon="i-lucide-wallet"
+                  block
+                  @click="navigateTo('/profile')"
+                />
+              </div>
+            </UForm>
+          </section>
+        </div>
+      </template>
+
+      <UModal v-model:open="confirmModalOpen" title="Confirmar transacción">
+        <template #body>
+          <div v-if="offer" class="space-y-2 text-sm">
+            <p>Vas a operar esta oferta con montos fijos:</p>
+            <p><strong>Entregas:</strong> {{ Number(offer.montoTengo).toLocaleString() }} {{ offer.monedaTengo }}</p>
+            <p><strong>Recibes:</strong> {{ Number(offer.montoRecibo).toLocaleString() }} {{ offer.monedaRecibo }}</p>
           </div>
-        </UForm>
-      </div>
-    </div>
-
-    <UModal v-model:open="confirmModalOpen" title="Confirmar transacción">
-      <template #body>
-        <div v-if="offer" class="space-y-2 text-sm">
-          <p>Vas a operar esta oferta con montos fijos:</p>
-          <p><strong>Entregas:</strong> {{ Number(offer.montoTengo).toLocaleString() }} {{ offer.monedaTengo }}</p>
-          <p><strong>Recibes:</strong> {{ Number(offer.montoRecibo).toLocaleString() }} {{ offer.monedaRecibo }}</p>
-        </div>
-      </template>
-      <template #footer>
-        <div class="flex gap-2 justify-end w-full">
-          <UButton label="Cancelar" color="neutral" variant="outline" @click="confirmModalOpen = false" />
-          <UButton label="Confirmar" color="primary" :loading="transactionLoading" @click="executeTransaction" />
-        </div>
-      </template>
-    </UModal>
+        </template>
+        <template #footer>
+          <div class="flex gap-2 justify-end w-full">
+            <UButton label="Cancelar" color="neutral" variant="outline" @click="confirmModalOpen = false" />
+            <UButton label="Confirmar" color="primary" :loading="transactionLoading" @click="executeTransaction" />
+          </div>
+        </template>
+      </UModal>
+    </main>
   </div>
 </template>
