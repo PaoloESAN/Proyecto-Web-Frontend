@@ -109,7 +109,7 @@ onMounted(() => {
                   </div>
                 </td>
                 <td class="px-5 py-4 font-medium">{{ tx.moneda }}</td>
-                <td class="px-5 py-4 font-mono">{{ tx.montoOperacion.toFixed(2) }}</td>
+                <td class="px-5 py-4 font-mono">{{ (tx.montoOperacion ?? 0).toFixed(2) }}</td>
                 <td class="px-5 py-4 font-mono text-neutral-500">{{ tx.tipoCambioAplicado.toFixed(4) }}</td>
                 <td class="px-5 py-4">
                   <UBadge :color="getEstadoColor(tx.estado)" variant="soft" size="sm">{{ tx.estado }}</UBadge>

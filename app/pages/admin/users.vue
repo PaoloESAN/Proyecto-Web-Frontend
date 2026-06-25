@@ -133,8 +133,7 @@ function totalPages() {
                   <UDropdownMenu :items="[
                     [{ label: 'Activo', icon: 'i-lucide-check-circle', onSelect: () => updateStatus(user.usuarioId, 'Activo') }],
                     [
-                      { label: 'Suspendido', icon: 'i-lucide-pause-circle', onSelect: () => updateStatus(user.usuarioId, 'Suspendido') },
-                      { label: 'Bloqueado', icon: 'i-lucide-ban', onSelect: () => updateStatus(user.usuarioId, 'Bloqueado') },
+                      { label: 'Bloqueado', icon: 'i-lucide-ban', onSelect: () => updateStatus(user.usuarioId, 'Bloqueado') }
                     ]
                   ]">
                     <UButton label="Cambiar estado" color="neutral" variant="outline" size="xs" :loading="updatingId === user.usuarioId" icon="i-lucide-chevron-down" trailing />

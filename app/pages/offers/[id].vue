@@ -80,7 +80,18 @@ const isOwnOffer = computed(() => authStore.isAuthenticated && offer.value?.usua
 async function onSubmit(_event: FormSubmitEvent<any>) {
   if (!authStore.isAuthenticated) {
     toast.add({ title: 'Inicia sesión', description: 'Debes iniciar sesión para operar.', color: 'warning' })
-    return navigateTo('/login')
+    await navigateTo('/login')
+    return
+  }
+
+  if (!authStore.usuario?.esVerificado) {
+    toast.add({
+      title: 'Verificación requerida',
+      description: 'Debes verificar tu identidad en tu perfil antes de iniciar una transacción.',
+      color: 'warning',
+      icon: 'i-lucide-shield-alert'
+    })
+    return
   }
 
   if (isOwnOffer.value) {
@@ -143,8 +154,8 @@ async function executeTransaction() {
 </script>
 
 <template>
-  <div class="min-h-dvh bg-gradient-to-b from-neutral-50 to-neutral-100/70 dark:from-neutral-950 dark:to-neutral-950">
-    <main class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+  <div class="min-h-dvh bg-linear-to-b from-neutral-50 to-neutral-100/70 dark:from-neutral-950 dark:to-neutral-950">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div v-if="loading" class="grid lg:grid-cols-[1.4fr_1fr] gap-6">
         <USkeleton class="h-72 rounded-2xl" />
         <USkeleton class="h-72 rounded-2xl" />

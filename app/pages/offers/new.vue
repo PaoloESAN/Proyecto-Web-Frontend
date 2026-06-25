@@ -11,6 +11,7 @@ definePageMeta({
 
 const toast = useToast()
 const api = useApi()
+const authStore = useAuthStore()
 
 const metodosPago = ref<MetodoPagoResponse[]>([])
 const loadingAccounts = ref(true)
@@ -138,6 +139,16 @@ watch(() => state.cantidad, refreshQuote)
 watch(() => state.tipoOperacion, refreshQuote)
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
+  if (!authStore.usuario?.esVerificado) {
+    toast.add({
+      title: 'Verificación requerida',
+      description: 'Debes verificar tu identidad en tu perfil antes de publicar una oferta.',
+      color: 'warning',
+      icon: 'i-lucide-shield-alert'
+    })
+    return
+  }
+
   submitting.value = true
   try {
     const payload: OfertaCreateRequest = {

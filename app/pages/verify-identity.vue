@@ -10,6 +10,7 @@ definePageMeta({
 const toast = useToast()
 const api = useApi()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const dniFrontalFile = ref<File | null>(null)
 const dniPosteriorFile = ref<File | null>(null)
@@ -108,6 +109,9 @@ async function submitKyc() {
     })
 
     successMsg.value = res.mensaje
+    if (authStore.usuario) {
+      authStore.usuario.esVerificado = true
+    }
     toast.add({
       title: 'Identidad verificada',
       description: res.mensaje,

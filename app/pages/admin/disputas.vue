@@ -149,12 +149,12 @@ const buyerSendsAmount = computed(() => {
 
   if (accountCurrency === offerCurrency) {
     return {
-      amount: transactionDetails.value.montoOperacion,
+      amount: transactionDetails.value.montoOperacion ?? 0,
       currency: accountCurrency
     }
   } else {
     return {
-      amount: Number((transactionDetails.value.montoOperacion * transactionDetails.value.tipoCambioAplicado).toFixed(2)),
+      amount: Number(((transactionDetails.value.montoOperacion ?? 0) * transactionDetails.value.tipoCambioAplicado).toFixed(2)),
       currency: accountCurrency
     }
   }
@@ -167,12 +167,12 @@ const sellerSendsAmount = computed(() => {
 
   if (accountCurrency === offerCurrency) {
     return {
-      amount: transactionDetails.value.montoOperacion,
+      amount: transactionDetails.value.montoOperacion ?? 0,
       currency: accountCurrency
     }
   } else {
     return {
-      amount: Number((transactionDetails.value.montoOperacion * transactionDetails.value.tipoCambioAplicado).toFixed(2)),
+      amount: Number(((transactionDetails.value.montoOperacion ?? 0) * transactionDetails.value.tipoCambioAplicado).toFixed(2)),
       currency: accountCurrency
     }
   }
@@ -203,7 +203,7 @@ onMounted(() => {
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 flex flex-col">
     <div class="flex flex-1 overflow-hidden">
       <!-- Sidebar -->
-      <div class="w-[420px] shrink-0 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden">
+      <div class="w-105 shrink-0 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden">
         <div class="p-5 border-b border-neutral-100 dark:border-neutral-800">
           <h1 class="text-xl font-bold text-neutral-900 dark:text-white">Disputas Activas</h1>
           <div class="mt-3">
@@ -477,7 +477,7 @@ onMounted(() => {
                     <span class="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">HISTORIAL Y CHAT DE LA TRANSACCIÓN</span>
                   </div>
                 </div>
-                <div class="flex-1 overflow-y-auto p-4 space-y-4 max-h-[500px]">
+                <div class="flex-1 overflow-y-auto p-4 space-y-4 max-h-125">
                   <div class="text-center mb-3">
                     <span class="text-[11px] font-medium text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full">
                       Disputa abierta el {{ formatDate(selectedDispute.fechaApertura) }}
@@ -585,7 +585,7 @@ onMounted(() => {
   </div>
 
   <!-- Modal para ver el comprobante en tamaño completo -->
-  <UModal v-model:open="isImageModalOpen" title="Vista Previa de Comprobante" :ui="{ width: 'max-w-4xl' }">
+  <UModal v-model:open="isImageModalOpen" title="Vista Previa de Comprobante" :ui="{ content: 'max-w-4xl' }">
     <template #body>
       <div class="flex flex-col items-center">
         <div class="w-full overflow-auto max-h-[70vh] flex justify-center bg-neutral-100 dark:bg-neutral-900 rounded-lg p-2 border border-neutral-200 dark:border-neutral-800">
