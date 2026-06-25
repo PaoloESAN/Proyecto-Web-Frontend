@@ -66,6 +66,22 @@ async function updateStatus(usuarioId: number, nuevoEstado: 'Activo' | 'Suspendi
   }
 }
 
+async function updateVerification(usuarioId: number, esVerificado: boolean) {
+  updatingId.value = usuarioId
+  try {
+    await api<any>(`/api/admin/users/${usuarioId}/verify`, {
+      method: 'PUT',
+      body: { esVerificado }
+    })
+    toast.add({ title: 'Verificación actualizada', color: 'success', icon: 'i-lucide-circle-check' })
+    await fetchUsers()
+  } catch {
+    toast.add({ title: 'Error', description: 'No se pudo actualizar la verificación', color: 'error', icon: 'i-lucide-alert-circle' })
+  } finally {
+    updatingId.value = null
+  }
+}
+
 onMounted(() => {
   if (!authStore.isAdmin) {
     toast.add({ title: 'Acceso Denegado', description: 'No tienes permisos de administrador', color: 'error' })
@@ -132,8 +148,11 @@ function totalPages() {
                 <td class="px-5 py-4 text-right">
                   <UDropdownMenu :items="[
                     [{ label: 'Activo', icon: 'i-lucide-check-circle', onSelect: () => updateStatus(user.usuarioId, 'Activo') }],
+                    [{ label: 'Bloqueado', icon: 'i-lucide-ban', onSelect: () => updateStatus(user.usuarioId, 'Bloqueado') }],
                     [
-                      { label: 'Bloqueado', icon: 'i-lucide-ban', onSelect: () => updateStatus(user.usuarioId, 'Bloqueado') }
+                      user.esVerificado
+                        ? { label: 'Quitar Verificación', icon: 'i-lucide-shield-off', onSelect: () => updateVerification(user.usuarioId, false) }
+                        : { label: 'Verificar Identidad', icon: 'i-lucide-shield-check', onSelect: () => updateVerification(user.usuarioId, true) }
                     ]
                   ]">
                     <UButton label="Cambiar estado" color="neutral" variant="outline" size="xs" :loading="updatingId === user.usuarioId" icon="i-lucide-chevron-down" trailing />

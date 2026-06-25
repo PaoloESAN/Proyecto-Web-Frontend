@@ -114,6 +114,23 @@ async function selectDispute(d: GetDisputesAdminResponse['datos'][0]) {
   }
 }
 
+// Estados para confirmación de resolución
+const isConfirmModalOpen = ref(false)
+const pendingResolution = ref<'A favor del comprador' | 'A favor del vendedor' | null>(null)
+
+function confirmResolveDispute(resolucion: 'A favor del comprador' | 'A favor del vendedor') {
+  pendingResolution.value = resolucion
+  isConfirmModalOpen.value = true
+}
+
+async function executeResolveDispute() {
+  if (!pendingResolution.value) return
+  const resolucion = pendingResolution.value
+  isConfirmModalOpen.value = false
+  await resolveDispute(resolucion)
+  pendingResolution.value = null
+}
+
 async function resolveDispute(resolucion: 'A favor del comprador' | 'A favor del vendedor') {
   if (!selectedDispute.value) return
   resolving.value = true
@@ -551,7 +568,7 @@ onMounted(() => {
                 icon="i-lucide-x"
                 :loading="resolving"
                 :disabled="resolving"
-                @click="resolveDispute('A favor del vendedor')"
+                @click="confirmResolveDispute('A favor del vendedor')"
               />
               <UButton
                 label="A FAVOR DEL COMPRADOR"
@@ -560,7 +577,7 @@ onMounted(() => {
                 class="text-white font-semibold"
                 :loading="resolving"
                 :disabled="resolving"
-                @click="resolveDispute('A favor del comprador')"
+                @click="confirmResolveDispute('A favor del comprador')"
               />
             </div>
           </div>
@@ -596,6 +613,37 @@ onMounted(() => {
     <template #footer="{ close }">
       <div class="w-full flex justify-end">
         <UButton label="Cerrar" color="neutral" variant="outline" @click="close" />
+      </div>
+    </template>
+  </UModal>
+
+  <!-- Modal de confirmación para resolver disputa -->
+  <UModal v-model:open="isConfirmModalOpen" title="Confirmar Resolución de Disputa">
+    <template #body>
+      <div class="space-y-3">
+        <p class="text-sm text-neutral-600 dark:text-neutral-300">
+          ¿Estás seguro de que deseas resolver esta disputa <strong class="text-neutral-900 dark:text-white">{{ pendingResolution }}</strong>?
+        </p>
+        <div class="p-3.5 rounded-lg bg-neutral-50 dark:bg-neutral-800/40 text-xs border border-neutral-100 dark:border-neutral-800/50 space-y-2">
+          <p v-if="pendingResolution === 'A favor del comprador'" class="text-neutral-500 dark:text-neutral-400 leading-relaxed">
+            <span class="font-bold text-red-500 uppercase block mb-1">Efecto de la resolución:</span>
+            La transacción será cancelada y la oferta correspondiente volverá a estar <strong>Activa</strong> en el mercado para recibir solicitudes de intercambio.
+          </p>
+          <p v-else-if="pendingResolution === 'A favor del vendedor'" class="text-neutral-500 dark:text-neutral-400 leading-relaxed">
+            <span class="font-bold text-green-500 uppercase block mb-1">Efecto de la resolución:</span>
+            La transacción será marcada como <strong>Finalizada</strong> de manera definitiva en el sistema.
+          </p>
+        </div>
+      </div>
+    </template>
+    <template #footer="{ close }">
+      <div class="w-full flex justify-end gap-3">
+        <UButton label="Cancelar" color="neutral" variant="outline" @click="close" />
+        <UButton
+          :label="pendingResolution === 'A favor del comprador' ? 'Confirmar a favor del Comprador' : 'Confirmar a favor del Vendedor'"
+          :color="pendingResolution === 'A favor del comprador' ? 'error' : 'primary'"
+          @click="executeResolveDispute"
+        />
       </div>
     </template>
   </UModal>
