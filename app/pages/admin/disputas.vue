@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import type { 
-  GetDisputesAdminResponse, 
-  ResolveDisputeResponse, 
-  MensajeChatResponse, 
-  ErrorResponse, 
-  TransaccionDetailResponse, 
-  OfertaDetalleResponse 
+import type {
+  GetDisputesAdminResponse,
+  ResolveDisputeResponse,
+  MensajeChatResponse,
+  ErrorResponse,
+  TransaccionDetailResponse,
+  OfertaDetalleResponse
 } from '~/types'
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth'],
+  title: "Administración - Disputas"
 })
 
 const toast = useToast()
@@ -78,11 +79,11 @@ async function selectDispute(d: GetDisputesAdminResponse['datos'][0]) {
   chatMessages.value = []
   transactionDetails.value = null
   offerDetails.value = null
-  
+
   try {
     const tx = await api<TransaccionDetailResponse>(`/api/transacciones/${d.transaccion.transaccionId}`)
     transactionDetails.value = tx
-    
+
     try {
       const off = await api<OfertaDetalleResponse>(`/api/ofertas/${tx.ofertaId}`)
       offerDetails.value = off
@@ -91,11 +92,11 @@ async function selectDispute(d: GetDisputesAdminResponse['datos'][0]) {
     }
   } catch (err) {
     console.error('Error al obtener los detalles de la transacción:', err)
-    toast.add({ 
-      title: 'Error', 
-      description: 'No se pudieron cargar los detalles completos de la transacción', 
-      color: 'error', 
-      icon: 'i-lucide-alert-circle' 
+    toast.add({
+      title: 'Error',
+      description: 'No se pudieron cargar los detalles completos de la transacción',
+      color: 'error',
+      icon: 'i-lucide-alert-circle'
     })
   } finally {
     loadingTxDetails.value = false
@@ -111,6 +112,23 @@ async function selectDispute(d: GetDisputesAdminResponse['datos'][0]) {
   } finally {
     loadingMessages.value = false
   }
+}
+
+// Estados para confirmación de resolución
+const isConfirmModalOpen = ref(false)
+const pendingResolution = ref<'A favor del comprador' | 'A favor del vendedor' | null>(null)
+
+function confirmResolveDispute(resolucion: 'A favor del comprador' | 'A favor del vendedor') {
+  pendingResolution.value = resolucion
+  isConfirmModalOpen.value = true
+}
+
+async function executeResolveDispute() {
+  if (!pendingResolution.value) return
+  const resolucion = pendingResolution.value
+  isConfirmModalOpen.value = false
+  await resolveDispute(resolucion)
+  pendingResolution.value = null
 }
 
 async function resolveDispute(resolucion: 'A favor del comprador' | 'A favor del vendedor') {
@@ -145,15 +163,15 @@ const buyerSendsAmount = computed(() => {
   if (!transactionDetails.value) return { amount: 0, currency: '' }
   const accountCurrency = transactionDetails.value.instruccionesPago.tipoMoneda
   const offerCurrency = offerDetails.value?.moneda || 'USD'
-  
+
   if (accountCurrency === offerCurrency) {
     return {
-      amount: transactionDetails.value.montoOperacion,
+      amount: transactionDetails.value.montoOperacion ?? 0,
       currency: accountCurrency
     }
   } else {
     return {
-      amount: Number((transactionDetails.value.montoOperacion * transactionDetails.value.tipoCambioAplicado).toFixed(2)),
+      amount: Number(((transactionDetails.value.montoOperacion ?? 0) * transactionDetails.value.tipoCambioAplicado).toFixed(2)),
       currency: accountCurrency
     }
   }
@@ -163,15 +181,15 @@ const sellerSendsAmount = computed(() => {
   if (!transactionDetails.value || !transactionDetails.value.metodoPagoComprador) return null
   const accountCurrency = transactionDetails.value.metodoPagoComprador.tipoMoneda
   const offerCurrency = offerDetails.value?.moneda || 'USD'
-  
+
   if (accountCurrency === offerCurrency) {
     return {
-      amount: transactionDetails.value.montoOperacion,
+      amount: transactionDetails.value.montoOperacion ?? 0,
       currency: accountCurrency
     }
   } else {
     return {
-      amount: Number((transactionDetails.value.montoOperacion * transactionDetails.value.tipoCambioAplicado).toFixed(2)),
+      amount: Number(((transactionDetails.value.montoOperacion ?? 0) * transactionDetails.value.tipoCambioAplicado).toFixed(2)),
       currency: accountCurrency
     }
   }
@@ -200,22 +218,9 @@ onMounted(() => {
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 flex flex-col">
-    <header class="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
-      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <h1 class="text-xl font-bold">Panel de Administración</h1>
-          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">Administrador</span>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="text-sm text-neutral-500">{{ authStore.usuario?.nombres }}</span>
-          <UButton label="Panel" color="neutral" variant="ghost" size="sm" icon="i-lucide-arrow-left" @click="navigateTo('/debug')" />
-        </div>
-      </div>
-    </header>
-
     <div class="flex flex-1 overflow-hidden">
       <!-- Sidebar -->
-      <div class="w-[380px] shrink-0 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden">
+      <div class="w-105 shrink-0 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex flex-col overflow-hidden">
         <div class="p-5 border-b border-neutral-100 dark:border-neutral-800">
           <h1 class="text-xl font-bold text-neutral-900 dark:text-white">Disputas Activas</h1>
           <div class="mt-3">
@@ -269,7 +274,7 @@ onMounted(() => {
       <!-- Main content -->
       <template v-if="selectedDispute">
         <div class="flex-1 flex flex-col overflow-hidden">
-          <div class="flex-1 overflow-y-auto p-6 space-y-5">
+          <div class="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6">
             <!-- Header -->
             <div class="flex items-start justify-between">
               <div>
@@ -306,11 +311,11 @@ onMounted(() => {
             <div class="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 space-y-4">
               <h3 class="text-sm font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider flex items-center gap-2">
                 <UIcon name="i-lucide-arrow-left-right" class="size-4 text-primary" />
-                Detalle de Cuentas e Intercambio Cruzado (P2P)
+                Detalle de cuentas e intercambio cruzado
               </h3>
-              
+
               <USkeleton v-if="loadingTxDetails" class="h-28 w-full rounded-lg" />
-              
+
               <div v-else-if="transactionDetails" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Comprador debe pagar a Vendedor -->
                 <div class="p-4 rounded-lg bg-red-50/50 dark:bg-red-950/10 border border-red-100 dark:border-red-900/30 flex flex-col justify-between">
@@ -398,7 +403,7 @@ onMounted(() => {
                 </div>
                 <div class="p-4 flex-1">
                   <USkeleton v-if="loadingTxDetails" v-for="i in 2" :key="i" class="h-40 rounded-lg mb-3" />
-                  
+
                   <div v-else-if="transactionDetails && transactionDetails.comprobantes && transactionDetails.comprobantes.length > 0" class="space-y-4">
                     <div
                       v-for="c in transactionDetails.comprobantes"
@@ -415,15 +420,15 @@ onMounted(() => {
                         </span>
                         <span class="text-[10px] text-neutral-400">{{ formatDate(c.fechaSubida) }}</span>
                       </div>
-                      
+
                       <p class="text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
-                        {{ c.usuarioId === transactionDetails.comprador.usuarioId 
-                          ? `${transactionDetails.comprador.nombres} ${transactionDetails.comprador.apellidos}` 
+                        {{ c.usuarioId === transactionDetails.comprador.usuarioId
+                          ? `${transactionDetails.comprador.nombres} ${transactionDetails.comprador.apellidos}`
                           : `${transactionDetails.vendedor.nombres} ${transactionDetails.vendedor.apellidos}` }}
                       </p>
-                      
+
                       <!-- Contenedor de miniatura con tamaño controlado -->
-                      <div 
+                      <div
                         class="relative h-44 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 group cursor-pointer"
                         @click="openPreview(c.imagenUrl)"
                       >
@@ -441,7 +446,7 @@ onMounted(() => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div v-else-if="selectedDispute.transaccion.comprobantes && selectedDispute.transaccion.comprobantes.length > 0" class="space-y-4">
                     <div
                       v-for="c in selectedDispute.transaccion.comprobantes"
@@ -454,8 +459,8 @@ onMounted(() => {
                         </span>
                         <span class="text-[10px] text-neutral-400">{{ formatDate(c.fechaSubida) }}</span>
                       </div>
-                      
-                      <div 
+
+                      <div
                         class="relative h-44 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 group cursor-pointer"
                         @click="openPreview(c.imagenUrl)"
                       >
@@ -489,7 +494,7 @@ onMounted(() => {
                     <span class="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">HISTORIAL Y CHAT DE LA TRANSACCIÓN</span>
                   </div>
                 </div>
-                <div class="flex-1 overflow-y-auto p-4 space-y-4 max-h-[500px]">
+                <div class="flex-1 overflow-y-auto p-4 space-y-4 max-h-125">
                   <div class="text-center mb-3">
                     <span class="text-[11px] font-medium text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-3 py-1 rounded-full">
                       Disputa abierta el {{ formatDate(selectedDispute.fechaApertura) }}
@@ -538,12 +543,12 @@ onMounted(() => {
               <p>Como administrador, tu resolución afectará el sistema de la siguiente manera:</p>
               <ul class="list-disc list-inside space-y-1 pl-1">
                 <li>
-                  <strong class="text-neutral-800 dark:text-neutral-200">A favor del Vendedor:</strong> 
+                  <strong class="text-neutral-800 dark:text-neutral-200">A favor del Vendedor:</strong>
                   Se finaliza la transacción. La operación se marca como completada de forma definitiva en el sistema.
                 </li>
                 <li>
-                  <strong class="text-neutral-800 dark:text-neutral-200">A favor del Comprador:</strong> 
-                  Se cancela la transacción. La oferta vuelve a estar activa y visible en el mercado P2P para recibir nuevas solicitudes.
+                  <strong class="text-neutral-800 dark:text-neutral-200">A favor del Comprador:</strong>
+                  Se cancela la transacción. La oferta vuelve a estar activa y visible en el mercado para recibir nuevas solicitudes.
                 </li>
               </ul>
             </div>
@@ -563,7 +568,7 @@ onMounted(() => {
                 icon="i-lucide-x"
                 :loading="resolving"
                 :disabled="resolving"
-                @click="resolveDispute('A favor del vendedor')"
+                @click="confirmResolveDispute('A favor del vendedor')"
               />
               <UButton
                 label="A FAVOR DEL COMPRADOR"
@@ -572,7 +577,7 @@ onMounted(() => {
                 class="text-white font-semibold"
                 :loading="resolving"
                 :disabled="resolving"
-                @click="resolveDispute('A favor del comprador')"
+                @click="confirmResolveDispute('A favor del comprador')"
               />
             </div>
           </div>
@@ -597,7 +602,7 @@ onMounted(() => {
   </div>
 
   <!-- Modal para ver el comprobante en tamaño completo -->
-  <UModal v-model:open="isImageModalOpen" title="Vista Previa de Comprobante" :ui="{ width: 'max-w-4xl' }">
+  <UModal v-model:open="isImageModalOpen" title="Vista Previa de Comprobante" :ui="{ content: 'max-w-4xl' }">
     <template #body>
       <div class="flex flex-col items-center">
         <div class="w-full overflow-auto max-h-[70vh] flex justify-center bg-neutral-100 dark:bg-neutral-900 rounded-lg p-2 border border-neutral-200 dark:border-neutral-800">
@@ -608,6 +613,37 @@ onMounted(() => {
     <template #footer="{ close }">
       <div class="w-full flex justify-end">
         <UButton label="Cerrar" color="neutral" variant="outline" @click="close" />
+      </div>
+    </template>
+  </UModal>
+
+  <!-- Modal de confirmación para resolver disputa -->
+  <UModal v-model:open="isConfirmModalOpen" title="Confirmar Resolución de Disputa">
+    <template #body>
+      <div class="space-y-3">
+        <p class="text-sm text-neutral-600 dark:text-neutral-300">
+          ¿Estás seguro de que deseas resolver esta disputa <strong class="text-neutral-900 dark:text-white">{{ pendingResolution }}</strong>?
+        </p>
+        <div class="p-3.5 rounded-lg bg-neutral-50 dark:bg-neutral-800/40 text-xs border border-neutral-100 dark:border-neutral-800/50 space-y-2">
+          <p v-if="pendingResolution === 'A favor del comprador'" class="text-neutral-500 dark:text-neutral-400 leading-relaxed">
+            <span class="font-bold text-red-500 uppercase block mb-1">Efecto de la resolución:</span>
+            La transacción será cancelada y la oferta correspondiente volverá a estar <strong>Activa</strong> en el mercado para recibir solicitudes de intercambio.
+          </p>
+          <p v-else-if="pendingResolution === 'A favor del vendedor'" class="text-neutral-500 dark:text-neutral-400 leading-relaxed">
+            <span class="font-bold text-green-500 uppercase block mb-1">Efecto de la resolución:</span>
+            La transacción será marcada como <strong>Finalizada</strong> de manera definitiva en el sistema.
+          </p>
+        </div>
+      </div>
+    </template>
+    <template #footer="{ close }">
+      <div class="w-full flex justify-end gap-3">
+        <UButton label="Cancelar" color="neutral" variant="outline" @click="close" />
+        <UButton
+          :label="pendingResolution === 'A favor del comprador' ? 'Confirmar a favor del Comprador' : 'Confirmar a favor del Vendedor'"
+          :color="pendingResolution === 'A favor del comprador' ? 'error' : 'primary'"
+          @click="executeResolveDispute"
+        />
       </div>
     </template>
   </UModal>

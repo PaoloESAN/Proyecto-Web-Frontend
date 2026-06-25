@@ -1,11 +1,9 @@
 export interface OfertaCreateRequest {
   metodoPagoId: number;
   tipoOperacion: "Compra" | "Venta";
-  moneda: string;
-  montoTotal: number;
-  montoMinimo: number;
-  montoMaximo: number;
-  tipoCambio: number;
+  monedaTengo: string;
+  monedaRecibo: string;
+  cantidad: number;
 }
 
 export interface OfertaResponse {
@@ -13,13 +11,52 @@ export interface OfertaResponse {
   usuarioCreadorId: number;
   metodoPagoId: number;
   tipoOperacion: "Compra" | "Venta";
+  monedaTengo: string;
+  monedaRecibo: string;
+  montoTengo: number;
+  montoRecibo: number;
+  tipoCambio: number;
+  estado: string;
+  fechaPublicacion: string;
+
+  // Compatibilidad temporal
   moneda: string;
   montoTotal: number;
   montoMinimo: number;
   montoMaximo: number;
+}
+
+export interface OfferCommonItem {
+  ofertaId: number;
+  tipoOperacion: "Compra" | "Venta";
+  monedaTengo: string;
+  monedaRecibo: string;
+  montoTengo: number;
+  montoRecibo: number;
   tipoCambio: number;
   estado: string;
   fechaPublicacion: string;
+  metodoPago: {
+    metodoPagoId: number;
+    banco: string;
+    nombreTitular: string;
+    numeroCuenta: string;
+    tipoMoneda: string;
+  } | null;
+  usuarioCreador?: {
+    usuarioId: number;
+    nombres: string;
+    apellidos: string;
+    correo: string;
+    calificacion: number;
+    fotoPerfilUrl?: string | null;
+  } | null;
+
+  // Compatibilidad temporal
+  moneda: string;
+  montoTotal: number;
+  montoMinimo: number;
+  montoMaximo: number;
 }
 
 export interface GetOffersResponse {
@@ -27,75 +64,31 @@ export interface GetOffersResponse {
   pagina: number;
   limite: number;
   totalPaginas: number;
-  datos: {
-    ofertaId: number;
-    tipoOperacion: "Compra" | "Venta";
-    moneda: string;
-    montoTotal: number;
-    montoMinimo: number;
-    montoMaximo: number;
-    tipoCambio: number;
-    estado: string;
-    fechaPublicacion: string;
-    metodoPago: {
-      metodoPagoId: number;
-      banco: string;
-      nombreTitular: string;
-      numeroCuenta: string;
-      tipoMoneda: string;
-    };
-    usuarioCreador: {
-      usuarioId: number;
-      nombres: string;
-      apellidos: string;
-      correo: string;
-      calificacion: number;
-    };
-  }[];
+  datos: OfferCommonItem[];
 }
 
-export interface MatchedOferta {
-  ofertaId: number;
-  tipoOperacion: string;
-  moneda: string;
-  montoTotal: number;
-  montoMinimo: number;
-  montoMaximo: number;
-  tipoCambio: number;
-  estado: string;
-  fechaPublicacion: string;
-  metodoPago: {
-    metodoPagoId: number;
-    banco: string;
-    nombreTitular: string;
-    numeroCuenta: string;
-    tipoMoneda: string;
-  };
-  usuarioCreador: {
-    usuarioId: number;
-    nombres: string;
-    apellidos: string;
-    correo: string;
-    calificacion: number;
-  };
+export interface GetMarketplaceOffersResponse {
+  total: number;
+  pagina: number;
+  limite: number;
+  totalPaginas: number;
+  datos: OfferCommonItem[];
 }
 
+export type MatchedOferta = OfferCommonItem;
 export type MatchesResponse = MatchedOferta[];
 
 export interface OfertaUpdateRequest {
-  monto_total: number;
-  monto_minimo: number;
-  monto_maximo: number;
-  tipo_cambio: number;
+  cantidad: number;
 }
 
 export interface OfertaDetalleResponse {
   ofertaId: number;
   tipoOperacion: "Compra" | "Venta";
-  moneda: string;
-  montoTotal: number;
-  montoMinimo: number;
-  montoMaximo: number;
+  monedaTengo: string;
+  monedaRecibo: string;
+  montoTengo: number;
+  montoRecibo: number;
   tipoCambio: number;
   estado: string;
   fechaPublicacion: string;
@@ -113,17 +106,23 @@ export interface OfertaDetalleResponse {
     correo: string;
     calificacion: number;
   } | null;
+
+  // Compatibilidad temporal
+  moneda: string;
+  montoTotal: number;
+  montoMinimo: number;
+  montoMaximo: number;
 }
 
 export type UsuarioOfertasResponse = {
   ofertaId: number;
   tipoOperacion: "Compra" | "Venta";
-  moneda: string;
-  montoTotal: number;
-  montoMinimo: number;
-  montoMaximo: number;
+  monedaTengo: string;
+  monedaRecibo: string;
+  montoTengo: number;
+  montoRecibo: number;
   tipoCambio: number;
-  estado: string; // "Activa" | "En Proceso"
+  estado: string;
   fechaPublicacion: string;
   metodoPago: {
     metodoPagoId: number;
@@ -132,4 +131,18 @@ export type UsuarioOfertasResponse = {
     numeroCuenta: string;
     tipoMoneda: string;
   } | null;
+
+  // Compatibilidad temporal
+  moneda: string;
+  montoTotal: number;
+  montoMinimo: number;
+  montoMaximo: number;
 }[];
+
+export interface ExchangeConvertResponse {
+  from: string;
+  to: string;
+  amount: number;
+  rate: number;
+  convertedAmount: number;
+}

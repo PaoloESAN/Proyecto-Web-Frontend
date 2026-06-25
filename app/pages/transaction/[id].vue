@@ -10,11 +10,12 @@ import type {
   CalificacionResponse,
   ErrorResponse,
   MetodoPagoResponse,
-  OfertaDetalleResponse,
 } from "~/types";
 
 definePageMeta({
   middleware: ["auth"],
+  title: "Sala de Transacción",
+  back: "/history",
 });
 
 const route = useRoute();
@@ -28,7 +29,6 @@ const selectedAccountId = Number(route.query.accountId);
 
 const loading = ref(true);
 const transaction = ref<TransaccionDetailResponse | null>(null);
-const offer = ref<OfertaDetalleResponse | null>(null);
 const messages = ref<MensajeChatResponse[]>([]);
 const errorMsg = ref<string | null>(null);
 
@@ -98,14 +98,7 @@ async function fetchTransaction() {
     transaction.value = response;
     ratingSubmitted.value = response.yaCalificado || false;
 
-    // Obtener oferta para conocer tipoOperacion
-    try {
-      offer.value = await api<OfertaDetalleResponse>(
-        `/api/ofertas/${response.ofertaId}`,
-      );
-    } catch (offerErr) {
-      console.error("Error al cargar la oferta de la transacción:", offerErr);
-    }
+
   } catch (err: any) {
     if (err.status === 404) {
       errorMsg.value = "La transacción especificada no existe.";
@@ -275,17 +268,26 @@ async function sendChatMessage() {
 }
 
 // Lógica de roles financieros
+const participantPaymentMethod = computed(() => {
+  if (!transaction.value) return null;
+  return (
+    transaction.value.metodoPagoParticipante ||
+    transaction.value.metodoPagoComprador ||
+    null
+  );
+});
+
 const destinationAccount = computed(() => {
   if (!transaction.value) return null;
   return isBuyer.value
     ? transaction.value.instruccionesPago
-    : transaction.value.metodoPagoComprador || null;
+    : participantPaymentMethod.value;
 });
 
 const myReceivingAccount = computed(() => {
   if (!transaction.value) return null;
   return isBuyer.value
-    ? transaction.value.metodoPagoComprador || null
+    ? participantPaymentMethod.value
     : transaction.value.instruccionesPago;
 });
 
@@ -303,74 +305,73 @@ const contraparteConfirmed = computed(() => {
     : transaction.value.confirmadoComprador;
 });
 
-const exactAmountToSend = computed(() => {
-  if (!transaction.value || !destinationAccount.value)
-    return { amount: 0, currency: "" };
-  const accountCurrency = destinationAccount.value.tipoMoneda;
+function getAmountByCurrency(currency: string): number {
+  if (!transaction.value) return 0;
 
-  if (accountCurrency === offer.value?.moneda) {
-    return {
-      amount: transaction.value.montoOperacion,
-      currency: accountCurrency,
-    };
-  } else {
-    return {
-      amount: Number(
-        (
-          transaction.value.montoOperacion *
-          transaction.value.tipoCambioAplicado
-        ).toFixed(2),
-      ),
-      currency: accountCurrency,
-    };
+  if (currency === transaction.value.monedaTengo) {
+    return Number(transaction.value.montoTengo ?? transaction.value.montoOperacion ?? 0);
   }
+
+  if (currency === transaction.value.monedaRecibo) {
+    const montoRecibo = transaction.value.montoRecibo;
+    if (typeof montoRecibo === "number") return Number(montoRecibo);
+
+    return Number(
+      ((transaction.value.montoOperacion ?? 0) * transaction.value.tipoCambioAplicado).toFixed(2),
+    );
+  }
+
+  return 0;
+}
+
+const exactAmountToSend = computed(() => {
+  if (!destinationAccount.value) return { amount: 0, currency: "" };
+
+  const currency = destinationAccount.value.tipoMoneda;
+  return {
+    amount: getAmountByCurrency(currency),
+    currency,
+  };
 });
 
 const exactAmountToReceive = computed(() => {
-  if (!transaction.value || !myReceivingAccount.value)
-    return { amount: 0, currency: "" };
-  const accountCurrency = myReceivingAccount.value.tipoMoneda;
+  if (!myReceivingAccount.value) return { amount: 0, currency: "" };
 
-  if (accountCurrency === offer.value?.moneda) {
-    return {
-      amount: transaction.value.montoOperacion,
-      currency: accountCurrency,
-    };
-  } else {
-    return {
-      amount: Number(
-        (
-          transaction.value.montoOperacion *
-          transaction.value.tipoCambioAplicado
-        ).toFixed(2),
-      ),
-      currency: accountCurrency,
-    };
-  }
+  const currency = myReceivingAccount.value.tipoMoneda;
+  return {
+    amount: getAmountByCurrency(currency),
+    currency,
+  };
 });
 
 // Confirmar recepción del dinero (Solo Vendedor)
 async function confirmReceipt() {
   confirmingReceipt.value = true;
   try {
-    await api<ConfirmReceiptResponse>(
+    const res = await api<ConfirmReceiptResponse>(
       `/api/transacciones/${transactionId}/confirm`,
       {
         method: "POST",
       },
     );
+
+    const finalizada = res?.estado === "Finalizado";
+
     toast.add({
-      title: "Transacción Finalizada",
-      description: "Has confirmado la recepción del pago.",
+      title: finalizada ? "Transacción finalizada" : "Pago confirmado",
+      description: finalizada
+        ? "Ambas partes confirmaron. La transacción se cerró correctamente."
+        : "Tu confirmación fue registrada. Falta la confirmación de la contraparte.",
       color: "success",
       icon: "i-lucide-check-circle",
     });
+
     await fetchTransaction();
   } catch (err: any) {
     const errorData = err.data as ErrorResponse | undefined;
     toast.add({
       title: "Error al confirmar",
-      description: errorData?.mensaje || "No se pudo finalizar la transacción.",
+      description: errorData?.mensaje || "No se pudo registrar la confirmación.",
       color: "error",
     });
   } finally {
@@ -588,38 +589,21 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="min-h-dvh bg-linear-to-b from-neutral-50 to-neutral-100 dark:from-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-50"
+    class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50"
   >
-    <!-- Header -->
-    <header
-      class="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200/50 dark:border-neutral-800/50 sticky top-0 z-40"
-    >
-      <div
-        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between"
-      >
-        <div class="flex items-center gap-3">
-          <UButton
-            label="Volver"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-arrow-left"
-            @click="navigateTo('/debug')"
-          />
-          <span class="text-sm font-bold tracking-tight text-neutral-400"
-            >/</span
-          >
-          <h1 class="text-lg font-bold tracking-tight flex items-center gap-2">
+    <!-- Content -->
+    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Encabezado de la Transacción -->
+      <div v-if="transaction" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div class="flex items-center gap-2">
+          <h1 class="text-2xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
             Sala de Transacción
-            <span
-              class="font-mono text-xs px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 rounded-md"
-            >
+            <span class="font-mono text-sm px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 rounded-md">
               #{{ transactionId }}
             </span>
           </h1>
         </div>
-
-        <div v-if="transaction" class="flex items-center gap-2">
-          <!-- Badges de Estado -->
+        <div class="flex items-center gap-2">
           <UBadge
             v-if="transaction.estado === 'Pendiente'"
             color="warning"
@@ -667,10 +651,6 @@ onBeforeUnmount(() => {
           </UBadge>
         </div>
       </div>
-    </header>
-
-    <!-- Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Loading State -->
       <div v-if="loading" class="space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -697,10 +677,11 @@ onBeforeUnmount(() => {
           {{ errorMsg }}
         </p>
         <UButton
-          label="Volver al Panel"
+          label="Volver al Historial"
           color="neutral"
           icon="i-lucide-arrow-left"
-          @click="navigateTo('/debug')"
+          class="cursor-pointer"
+          @click="navigateTo('/history')"
         />
       </div>
 
@@ -713,7 +694,7 @@ onBeforeUnmount(() => {
         <div class="lg:col-span-2 space-y-6">
           <!-- Stepper Visual -->
           <div
-            class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl p-6 shadow-sm"
+            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm"
           >
             <h2
               class="text-xs font-bold tracking-wider text-neutral-400 dark:text-neutral-500 uppercase mb-4"
@@ -836,7 +817,7 @@ onBeforeUnmount(() => {
 
           <!-- Acciones de Flujo de Pago -->
           <div
-            class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl p-6 shadow-sm space-y-6"
+            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm space-y-6"
           >
             <!-- CASO: ESTADO PENDIENTE O PAGADO -->
             <div
@@ -858,7 +839,7 @@ onBeforeUnmount(() => {
                   <h3
                     class="text-sm font-bold text-primary-800 dark:text-primary-400"
                   >
-                    Instrucciones de Pago P2P
+                    Instrucciones de pago
                   </h3>
                   <p
                     class="text-xs text-primary-700/90 dark:text-primary-400/90 mt-1 flex flex-col gap-1"
@@ -1206,7 +1187,7 @@ onBeforeUnmount(() => {
                     Califica tu experiencia con la contraparte
                   </h3>
                   <p class="text-xs text-neutral-400">
-                    Tu opinión es muy importante para mantener una comunidad P2P
+                    Tu opinión es muy importante para mantener una comunidad
                     confiable y segura.
                   </p>
                 </div>
@@ -1515,7 +1496,7 @@ onBeforeUnmount(() => {
           <!-- Ficha de Contraparte -->
           <div
             v-if="contraparte"
-            class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl p-6 shadow-sm space-y-4"
+            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm space-y-4"
           >
             <h2
               class="text-xs font-bold tracking-wider text-neutral-400 dark:text-neutral-500 uppercase"
@@ -1564,7 +1545,7 @@ onBeforeUnmount(() => {
 
           <!-- Chat en Tiempo Real -->
           <div
-            class="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl shadow-sm overflow-hidden flex flex-col h-120"
+            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm overflow-hidden flex flex-col h-120"
           >
             <!-- Chat Header -->
             <div

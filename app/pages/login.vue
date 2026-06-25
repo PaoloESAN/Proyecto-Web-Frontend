@@ -3,6 +3,10 @@ import * as z from "zod";
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { ErrorResponse, LoginRequest, LoginResponse } from "~/types";
 
+definePageMeta({
+  layout: false,
+});
+
 // Esquema de validación con Zod
 const schema = z.object({
   correo: z.email("Ingresa un formato de correo electrónico válido"),
@@ -35,8 +39,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     // Guardar sesión en Pinia y cookies
     authStore.login(response.token, response.expiracion, response.usuario);
 
-    // Redirigir al panel de debug
-    await navigateTo('/debug')
+    // Redirigir a la pantalla principal
+    await navigateTo('/marketplace')
   } catch (error: any) {
     const errorData = error.data as ErrorResponse | undefined;
     if (errorData && errorData.mensaje) {
@@ -58,10 +62,10 @@ function quickLogin(correo: string, contrasena: string) {
 
 <template>
   <div
-    class="flex min-h-dvh items-center justify-center bg-linear-to-tr from-neutral-100 to-neutral-50 dark:from-neutral-950 dark:to-neutral-900 px-4"
+    class="flex min-h-dvh items-center justify-center bg-linear-to-br from-neutral-100 via-neutral-50 to-primary-50/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-primary-950/20 px-6 py-10"
   >
     <UCard
-      class="w-full max-w-md backdrop-blur-md bg-white/90 dark:bg-neutral-900/90 border border-neutral-200/50 dark:border-neutral-800/50 shadow-2xl rounded-2xl transition-all duration-300 hover:shadow-primary/5 dark:hover:shadow-primary/10"
+      class="w-full max-w-xl backdrop-blur-md bg-white/90 dark:bg-neutral-900/90 border border-neutral-200/50 dark:border-neutral-800/50 shadow-2xl rounded-2xl transition-all duration-300 hover:shadow-primary/5 dark:hover:shadow-primary/10"
       :ui="{ body: 'p-6 sm:p-8' }"
     >
       <template #header>
@@ -70,12 +74,12 @@ function quickLogin(correo: string, contrasena: string) {
             <UIcon name="i-lucide-lock" class="size-6 animate-pulse" />
           </div>
           <h1
-            class="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white"
+            class="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white"
           >
             Bienvenido de nuevo
           </h1>
           <p class="text-sm text-neutral-500 dark:text-neutral-400">
-            Ingresa a tu cuenta P2P para comerciar
+            Ingresa a tu cuenta para comerciar
           </p>
         </div>
       </template>

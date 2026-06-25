@@ -13,6 +13,7 @@ export interface LoginResponse {
     correo: string;
     rol: "Usuario" | "Administrador";
     esVerificado: boolean;
+    fotoPerfilUrl: string | null;
   };
 }
 

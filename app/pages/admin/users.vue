@@ -2,7 +2,8 @@
 import type { GetUsersAdminResponse, UpdateUserStatusResponse, ErrorResponse } from '~/types'
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth'],
+  title: "Administración - Usuarios"
 })
 
 const toast = useToast()
@@ -65,6 +66,22 @@ async function updateStatus(usuarioId: number, nuevoEstado: 'Activo' | 'Suspendi
   }
 }
 
+async function updateVerification(usuarioId: number, esVerificado: boolean) {
+  updatingId.value = usuarioId
+  try {
+    await api<any>(`/api/admin/users/${usuarioId}/verify`, {
+      method: 'PUT',
+      body: { esVerificado }
+    })
+    toast.add({ title: 'Verificación actualizada', color: 'success', icon: 'i-lucide-circle-check' })
+    await fetchUsers()
+  } catch {
+    toast.add({ title: 'Error', description: 'No se pudo actualizar la verificación', color: 'error', icon: 'i-lucide-alert-circle' })
+  } finally {
+    updatingId.value = null
+  }
+}
+
 onMounted(() => {
   if (!authStore.isAdmin) {
     toast.add({ title: 'Acceso Denegado', description: 'No tienes permisos de administrador', color: 'error' })
@@ -83,20 +100,7 @@ function totalPages() {
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
-    <header class="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
-      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <h1 class="text-xl font-bold">Admin - Usuarios</h1>
-          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">Administrador</span>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="text-sm text-neutral-500">{{ authStore.usuario?.nombres }}</span>
-          <UButton label="Panel" color="neutral" variant="ghost" size="sm" icon="i-lucide-arrow-left" @click="navigateTo('/debug')" />
-        </div>
-      </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-6 py-8">
+    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
         <div class="p-5 border-b border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div class="flex gap-3 items-center flex-1">
@@ -144,9 +148,11 @@ function totalPages() {
                 <td class="px-5 py-4 text-right">
                   <UDropdownMenu :items="[
                     [{ label: 'Activo', icon: 'i-lucide-check-circle', onSelect: () => updateStatus(user.usuarioId, 'Activo') }],
+                    [{ label: 'Bloqueado', icon: 'i-lucide-ban', onSelect: () => updateStatus(user.usuarioId, 'Bloqueado') }],
                     [
-                      { label: 'Suspendido', icon: 'i-lucide-pause-circle', onSelect: () => updateStatus(user.usuarioId, 'Suspendido') },
-                      { label: 'Bloqueado', icon: 'i-lucide-ban', onSelect: () => updateStatus(user.usuarioId, 'Bloqueado') },
+                      user.esVerificado
+                        ? { label: 'Quitar Verificación', icon: 'i-lucide-shield-off', onSelect: () => updateVerification(user.usuarioId, false) }
+                        : { label: 'Verificar Identidad', icon: 'i-lucide-shield-check', onSelect: () => updateVerification(user.usuarioId, true) }
                     ]
                   ]">
                     <UButton label="Cambiar estado" color="neutral" variant="outline" size="xs" :loading="updatingId === user.usuarioId" icon="i-lucide-chevron-down" trailing />

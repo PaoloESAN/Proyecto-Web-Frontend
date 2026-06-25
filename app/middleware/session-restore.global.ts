@@ -18,6 +18,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
         correo: profile.correo,
         rol: profile.rol as "Usuario" | "Administrador",
         esVerificado: profile.esVerificado,
+        fotoPerfilUrl: profile.fotoPerfilUrl,
       };
     } catch (error) {
       // Si el token es inválido o expiró, limpiamos la sesión

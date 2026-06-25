@@ -1,7 +1,6 @@
 export interface TransaccionCreateRequest {
   ofertaId: number;
-  montoOperacion: number;
-  metodoPagoCompradorId: number;
+  metodoPagoParticipanteId: number;
 }
 
 export interface TransaccionCreateResponse {
@@ -11,12 +10,17 @@ export interface TransaccionCreateResponse {
     ofertaId: number;
     usuarioCompradorId: number;
     usuarioVendedorId: number;
-    metodoPagoCompradorId: number;
-    montoOperacion: number;
+    metodoPagoParticipanteId: number;
+    montoTengo: number;
+    montoRecibo: number;
     tipoCambioAplicado: number;
     estado: "Pendiente";
     fechaInicio: string;
     fechaActualizacion: string;
+
+    // Compatibilidad temporal
+    metodoPagoCompradorId?: number;
+    montoOperacion?: number;
   };
 }
 
@@ -29,8 +33,10 @@ export interface TransaccionHistoryResponse {
     transaccionId: number;
     ofertaId: number;
     tipoOperacion: "Compra" | "Venta";
-    moneda: string;
-    montoOperacion: number;
+    monedaTengo: string;
+    monedaRecibo: string;
+    montoTengo: number;
+    montoRecibo: number;
     tipoCambioAplicado: number;
     estado: string;
     fechaInicio: string;
@@ -42,13 +48,20 @@ export interface TransaccionHistoryResponse {
       apellidos: string;
     };
     yaCalificado: boolean;
+
+    // Compatibilidad temporal
+    moneda?: string;
+    montoOperacion?: number;
   }[];
 }
 
 export interface TransaccionDetailResponse {
   transaccionId: number;
   ofertaId: number;
-  montoOperacion: number;
+  monedaTengo: string;
+  monedaRecibo: string;
+  montoTengo: number;
+  montoRecibo: number;
   tipoCambioAplicado: number;
   estado: string;
   fechaInicio: string;
@@ -71,7 +84,7 @@ export interface TransaccionDetailResponse {
     nombreTitular: string;
     tipoMoneda: string;
   };
-  metodoPagoComprador?: {
+  metodoPagoParticipante?: {
     banco: string;
     numeroCuenta: string;
     nombreTitular: string;
@@ -81,6 +94,15 @@ export interface TransaccionDetailResponse {
   confirmadoComprador: boolean;
   confirmadoVendedor: boolean;
   yaCalificado: boolean;
+
+  // Compatibilidad temporal
+  montoOperacion?: number;
+  metodoPagoComprador?: {
+    banco: string;
+    numeroCuenta: string;
+    nombreTitular: string;
+    tipoMoneda: string;
+  } | null;
 }
 
 export interface ComprobanteDetail {

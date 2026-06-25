@@ -1,50 +1,78 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import type { MetodoPagoResponse, OfertaResponse } from '~/types'
+import type { MetodoPagoResponse, OfertaCreateRequest, OfertaResponse, ExchangeConvertResponse } from '~/types'
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth'],
+  title: 'Nueva Oferta',
+  back: '/my-offers'
 })
 
 const toast = useToast()
 const api = useApi()
+const authStore = useAuthStore()
 
 const metodosPago = ref<MetodoPagoResponse[]>([])
 const loadingAccounts = ref(true)
 const submitting = ref(false)
+const loadingQuote = ref(false)
 
 const monedas = [
   { label: 'USD - Dólar Estadounidense', value: 'USD' },
   { label: 'EUR - Euro', value: 'EUR' },
   { label: 'GBP - Libra Esterlina', value: 'GBP' },
   { label: 'MXN - Peso Mexicano', value: 'MXN' },
-  { label: 'PEN - Sol Peruano', value: 'PEN' },
+  { label: 'PEN - Sol Peruano', value: 'PEN' }
 ]
 
-const tiposOperacion = ['Compra', 'Venta'] as const
 const tipoOperacion = ref<'Compra' | 'Venta'>('Compra')
 
 const schema = z.object({
   metodoPagoId: z.number({ message: 'Selecciona un método de pago' }).positive(),
   tipoOperacion: z.enum(['Compra', 'Venta'], { message: 'Selecciona una operación' }),
-  moneda: z.string().min(1, 'Selecciona una moneda'),
-  montoTotal: z.number({ message: 'Debe ser un número' }).positive('Debe ser mayor a 0'),
-  montoMinimo: z.number({ message: 'Debe ser un número' }).positive('Debe ser mayor a 0'),
-  montoMaximo: z.number({ message: 'Debe ser un número' }).positive('Debe ser mayor a 0'),
-  tipoCambio: z.number({ message: 'Debe ser un número' }).positive('Debe ser mayor a 0'),
+  monedaTengo: z.string().min(1, 'Selecciona la moneda que tienes'),
+  monedaRecibo: z.string().min(1, 'Selecciona la moneda que quieres recibir'),
+  cantidad: z.number({ message: 'Debe ser un número' }).positive('Debe ser mayor a 0')
+}).refine(v => v.monedaTengo !== v.monedaRecibo, {
+  message: 'Las monedas deben ser diferentes',
+  path: ['monedaRecibo']
 })
 
 type Schema = z.output<typeof schema>
 const state = reactive<Partial<Schema>>({
   metodoPagoId: undefined,
   tipoOperacion: 'Compra',
-  moneda: '',
-  montoTotal: undefined,
-  montoMinimo: undefined,
-  montoMaximo: undefined,
-  tipoCambio: undefined,
+  monedaTengo: '',
+  monedaRecibo: '',
+  cantidad: undefined
 })
+
+const quote = ref<{ rate: number; entregas: number; recibes: number } | null>(null)
+
+const metodosPagoItems = computed(() => {
+  const monedaTengo = state.monedaTengo
+  const cuentasFiltradas = metodosPago.value.filter(m => !monedaTengo || m.tipoMoneda === monedaTengo)
+
+  if (cuentasFiltradas.length === 0) {
+    return [{ label: 'No tienes cuentas en esta moneda', value: null, disabled: true }]
+  }
+
+  return cuentasFiltradas.map(m => ({
+    label: `${m.banco} (**** ${m.numeroCuenta.slice(-4)})`,
+    suffix: m.tipoMoneda,
+    value: m.metodoPagoId
+  }))
+})
+
+const cantidadLabel = computed(() =>
+  state.tipoOperacion === 'Compra'
+    ? `Cantidad que quieres recibir (${state.monedaRecibo || '---'})`
+    : `Cantidad que tienes para vender (${state.monedaTengo || '---'})`
+)
+
+const previewEntrega = computed(() => quote.value?.entregas ?? 0)
+const previewRecibe = computed(() => quote.value?.recibes ?? 0)
 
 async function fetchMetodosPago() {
   loadingAccounts.value = true
@@ -57,26 +85,87 @@ async function fetchMetodosPago() {
   }
 }
 
-const metodosPagoItems = computed(() =>
-  metodosPago.value.length > 0
-    ? metodosPago.value.map(m => ({
-        label: `${m.banco} (**** ${m.numeroCuenta.slice(-4)})`,
-        suffix: m.tipoMoneda,
-        value: m.metodoPagoId
-      }))
-    : [{ label: 'No tienes cuentas vinculadas', value: null, disabled: true }]
-)
+async function refreshQuote() {
+  if (!state.monedaTengo || !state.monedaRecibo || !state.cantidad || state.cantidad <= 0 || state.monedaTengo === state.monedaRecibo) {
+    quote.value = null
+    return
+  }
+
+  loadingQuote.value = true
+  try {
+    if (state.tipoOperacion === 'Compra') {
+      const res = await api<ExchangeConvertResponse>('/api/tipo-cambio/convert', {
+        params: {
+          from: state.monedaRecibo,
+          to: state.monedaTengo,
+          amount: state.cantidad
+        }
+      })
+      quote.value = {
+        rate: res.rate,
+        entregas: Number(res.convertedAmount),
+        recibes: Number(state.cantidad)
+      }
+    } else {
+      const res = await api<ExchangeConvertResponse>('/api/tipo-cambio/convert', {
+        params: {
+          from: state.monedaTengo,
+          to: state.monedaRecibo,
+          amount: state.cantidad
+        }
+      })
+      quote.value = {
+        rate: res.rate,
+        entregas: Number(state.cantidad),
+        recibes: Number(res.convertedAmount)
+      }
+    }
+  } catch {
+    quote.value = null
+  } finally {
+    loadingQuote.value = false
+  }
+}
+
+watch(() => state.monedaTengo, () => {
+  if (state.metodoPagoId) {
+    const exists = metodosPago.value.some(m => m.metodoPagoId === state.metodoPagoId && m.tipoMoneda === state.monedaTengo)
+    if (!exists) state.metodoPagoId = undefined
+  }
+  refreshQuote()
+})
+watch(() => state.monedaRecibo, refreshQuote)
+watch(() => state.cantidad, refreshQuote)
+watch(() => state.tipoOperacion, refreshQuote)
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
+  if (!authStore.usuario?.esVerificado) {
+    toast.add({
+      title: 'Verificación requerida',
+      description: 'Debes verificar tu identidad en tu perfil antes de publicar una oferta.',
+      color: 'warning',
+      icon: 'i-lucide-shield-alert'
+    })
+    return
+  }
+
   submitting.value = true
   try {
-    const { tipoOperacion: op, ...rest } = event.data
+    const payload: OfertaCreateRequest = {
+      metodoPagoId: event.data.metodoPagoId,
+      tipoOperacion: event.data.tipoOperacion,
+      monedaTengo: event.data.monedaTengo,
+      monedaRecibo: event.data.monedaRecibo,
+      cantidad: event.data.cantidad
+    }
+
     await api<OfertaResponse>('/api/ofertas', {
       method: 'POST',
-      body: { ...rest, tipoOperacion: op }
+      body: payload
     })
+
     toast.add({ title: 'Oferta publicada', description: 'Tu oferta ya está disponible en el mercado', color: 'success', icon: 'i-lucide-circle-check' })
-    await navigateTo('/offers')
+    await navigateTo('/my-offers')
   } catch {
     toast.add({ title: 'Error', description: 'No se pudo crear la oferta. Verifica los datos e inténtalo de nuevo.', color: 'error', icon: 'i-lucide-alert-circle' })
   } finally {
@@ -88,140 +177,87 @@ onMounted(fetchMetodosPago)
 </script>
 
 <template>
-  <div class="min-h-dvh bg-linear-to-br from-neutral-50 via-neutral-50 to-primary-50/30 dark:from-neutral-950 dark:via-neutral-950 dark:to-primary-950/20">
-    <header class="sticky top-0 z-10 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-lg border-b border-neutral-200/50 dark:border-neutral-800/50">
-      <div class="max-w-3xl mx-auto px-6 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-            <UIcon name="i-lucide-plus" class="size-5" />
-          </div>
-          <div>
-            <h1 class="text-lg font-bold">Nueva Oferta</h1>
-            <p class="text-xs text-muted leading-none mt-0.5">Publica una operación en el mercado P2P</p>
-          </div>
-        </div>
-        <UButton label="Volver" color="neutral" variant="ghost" icon="i-lucide-arrow-left" size="sm" @click="navigateTo('/offers')" />
-      </div>
-    </header>
-
-    <main class="max-w-3xl mx-auto px-6 py-10">
-      <div class="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl shadow-xl shadow-primary-500/5">
+  <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50">
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm">
         <div class="p-8">
           <UForm :schema="schema" :state="state" class="space-y-8" @submit="onSubmit">
             <section class="space-y-5">
               <div class="flex items-center gap-2 text-xs font-semibold text-muted uppercase tracking-wider">
-                <UIcon name="i-lucide-shopping-cart" class="size-3.5" />
-                Tipo de Operación
+                <UIcon name="i-lucide-repeat" class="size-3.5" />
+                Datos de la oferta
               </div>
 
               <div class="grid gap-4 p-4 bg-neutral-50/50 dark:bg-neutral-800/20 rounded-xl border border-neutral-100/50 dark:border-neutral-800/50">
                 <UFormField name="tipoOperacion" label="¿Qué deseas hacer?" required>
                   <div class="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      :class="[
-                        'relative flex items-center gap-3 rounded-xl border-2 p-4 transition-all duration-200',
-                        tipoOperacion === 'Compra'
-                          ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                          : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600'
-                      ]"
-                      @click="tipoOperacion = 'Compra'; state.tipoOperacion = 'Compra'"
-                    >
+                    <button type="button" :class="['relative flex items-center gap-3 rounded-xl border-2 p-4 transition-all duration-200', tipoOperacion === 'Compra' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600']" @click="tipoOperacion = 'Compra'; state.tipoOperacion = 'Compra'">
                       <div :class="['size-10 rounded-lg flex items-center justify-center transition-colors', tipoOperacion === 'Compra' ? 'bg-primary/10' : 'bg-neutral-100 dark:bg-neutral-700']">
                         <UIcon name="i-lucide-arrow-down-to-line" class="size-5" />
                       </div>
                       <div class="text-left">
                         <p class="text-sm font-bold">Comprar</p>
-                        <p class="text-xs text-muted">Vas a adquirir divisas</p>
+                        <p class="text-xs text-muted">Ingresas cuánto quieres recibir</p>
                       </div>
                     </button>
-                    <button
-                      type="button"
-                      :class="[
-                        'relative flex items-center gap-3 rounded-xl border-2 p-4 transition-all duration-200',
-                        tipoOperacion === 'Venta'
-                          ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                          : 'border-neutral-200/60 dark:border-neutral-700/50 bg-neutral-50/80 dark:bg-neutral-800/20 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600 hover:bg-neutral-100/50 dark:hover:bg-neutral-800/40'
-                      ]"
-                      @click="tipoOperacion = 'Venta'; state.tipoOperacion = 'Venta'"
-                    >
+                    <button type="button" :class="['relative flex items-center gap-3 rounded-xl border-2 p-4 transition-all duration-200', tipoOperacion === 'Venta' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-neutral-200/60 dark:border-neutral-700/50 bg-neutral-50/80 dark:bg-neutral-800/20 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600 hover:bg-neutral-100/50 dark:hover:bg-neutral-800/40']" @click="tipoOperacion = 'Venta'; state.tipoOperacion = 'Venta'">
                       <div :class="['size-10 rounded-lg flex items-center justify-center transition-colors', tipoOperacion === 'Venta' ? 'bg-primary/10' : 'bg-neutral-200/70 dark:bg-neutral-700/50']">
                         <UIcon name="i-lucide-arrow-up-from-line" class="size-5" />
                       </div>
                       <div class="text-left">
                         <p class="text-sm font-bold">Vender</p>
-                        <p class="text-xs text-muted">Ofreces tus divisas</p>
+                        <p class="text-xs text-muted">Ingresas cuánto quieres entregar</p>
                       </div>
                     </button>
                   </div>
                 </UFormField>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <UFormField name="moneda" label="Moneda" required>
-                    <USelect v-model="state.moneda" :items="monedas" placeholder="Selecciona" class="w-full" />
+                  <UFormField name="monedaTengo" label="Moneda que tienes" required>
+                    <USelect v-model="state.monedaTengo" :items="monedas" placeholder="Selecciona" class="w-full" />
                   </UFormField>
 
-                  <UFormField name="metodoPagoId" label="Método de Pago" required>
-                    <USelect
-                      v-if="!loadingAccounts"
-                      v-model="state.metodoPagoId"
-                      :items="metodosPagoItems"
-                      placeholder="Elige una cuenta"
-                      class="w-full"
-                    />
-                    <UInput v-else disabled placeholder="Cargando cuentas..." class="w-full" />
+                  <UFormField name="monedaRecibo" label="Moneda que quieres recibir" required>
+                    <USelect v-model="state.monedaRecibo" :items="monedas" placeholder="Selecciona" class="w-full" />
                   </UFormField>
                 </div>
+
+                <UFormField name="cantidad" :label="cantidadLabel" required>
+                  <UInput v-model.number="state.cantidad" type="number" step="0.01" placeholder="Ej: 1000" class="w-full" :min="0" />
+                </UFormField>
+
+                <UFormField name="metodoPagoId" label="Tu cuenta bancaria (de la moneda que tienes)" required>
+                  <USelect
+                    v-if="!loadingAccounts"
+                    v-model="state.metodoPagoId"
+                    :items="metodosPagoItems"
+                    placeholder="Elige una cuenta"
+                    class="w-full"
+                  />
+                  <UInput v-else disabled placeholder="Cargando cuentas..." class="w-full" />
+                </UFormField>
               </div>
             </section>
 
             <section class="space-y-5">
               <div class="flex items-center gap-2 text-xs font-semibold text-muted uppercase tracking-wider">
-                <UIcon name="i-lucide-coins" class="size-3.5" />
-                Montos y Cotización
+                <UIcon name="i-lucide-calculator" class="size-3.5" />
+                Vista previa de conversión
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-neutral-50/50 dark:bg-neutral-800/20 rounded-xl border border-neutral-100/50 dark:border-neutral-800/50">
-                <UFormField name="montoTotal" label="Monto Total" required description="Inventario disponible">
-                  <UInput v-model="state.montoTotal" type="number" step="0.01" placeholder="Ej: 1000" class="w-full">
-                    <template #leading>
-                      <span class="text-muted text-xs font-medium">S/</span>
-                    </template>
-                  </UInput>
-                </UFormField>
-
-                <UFormField name="montoMinimo" label="Monto Mínimo" required description="Por transacción">
-                  <UInput v-model="state.montoMinimo" type="number" step="0.01" placeholder="Ej: 50" class="w-full">
-                    <template #leading>
-                      <span class="text-muted text-xs font-medium">S/</span>
-                    </template>
-                  </UInput>
-                </UFormField>
-
-                <UFormField name="montoMaximo" label="Monto Máximo" required description="Por transacción">
-                  <UInput v-model="state.montoMaximo" type="number" step="0.01" placeholder="Ej: 500" class="w-full">
-                    <template #leading>
-                      <span class="text-muted text-xs font-medium">S/</span>
-                    </template>
-                  </UInput>
-                </UFormField>
-              </div>
-
-              <div class="p-4 bg-neutral-50/50 dark:bg-neutral-800/20 rounded-xl border border-neutral-100/50 dark:border-neutral-800/50">
-                <UFormField name="tipoCambio" label="Tipo de Cambio" required description="Precio por unidad de la moneda seleccionada">
-                  <div class="relative max-w-xs">
-                    <UInput v-model="state.tipoCambio" type="number" step="0.01" placeholder="Ej: 3.75" class="w-full">
-                      <template #leading>
-                        <span class="text-muted text-xs font-medium">S/</span>
-                      </template>
-                    </UInput>
-                  </div>
-                </UFormField>
+              <div class="p-4 bg-neutral-50/50 dark:bg-neutral-800/20 rounded-xl border border-neutral-100/50 dark:border-neutral-800/50 space-y-2">
+                <p v-if="loadingQuote" class="text-sm text-neutral-500">Calculando tipo de cambio...</p>
+                <template v-else-if="quote">
+                  <p class="text-sm text-neutral-500">Tipo de cambio actual: <strong>{{ quote.rate.toFixed(6) }}</strong></p>
+                  <p class="text-sm">Tú entregas: <strong>{{ previewEntrega.toLocaleString() }} {{ state.monedaTengo }}</strong></p>
+                  <p class="text-sm">Tú recibes: <strong>{{ previewRecibe.toLocaleString() }} {{ state.monedaRecibo }}</strong></p>
+                </template>
+                <p v-else class="text-sm text-neutral-500">Completa monedas y cantidad para ver el cálculo automático.</p>
               </div>
             </section>
 
             <div class="flex items-center justify-end gap-3 pt-6 border-t border-neutral-100 dark:border-neutral-800">
-              <UButton label="Cancelar" color="neutral" variant="outline" size="lg" @click="navigateTo('/offers')" />
+              <UButton label="Cancelar" color="neutral" variant="outline" size="lg" @click="navigateTo('/my-offers')" class="cursor-pointer" />
               <UButton type="submit" label="Publicar oferta" color="primary" size="lg" :loading="submitting" icon="i-lucide-rocket" trailing />
             </div>
           </UForm>

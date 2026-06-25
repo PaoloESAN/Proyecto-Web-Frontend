@@ -1,54 +1,99 @@
 <script setup lang="ts">
-import type { UsuarioOfertasResponse, OfertaUpdateRequest } from '~/types'
+import type { UsuarioOfertasResponse, OfertaUpdateRequest, TransaccionHistoryResponse } from '~/types'
 
 definePageMeta({
-  middleware: ['auth']
+  middleware: ['auth'],
+  title: 'Mis ofertas'
 })
 
 const api = useApi()
 const toast = useToast()
+const route = useRoute()
 
 const offers = ref<UsuarioOfertasResponse>([])
+const receivedTransactions = ref<TransaccionHistoryResponse['datos']>([])
 const loading = ref(false)
 
-// Edit modal state
 const editModalOpen = ref(false)
 const editingOffer = ref<UsuarioOfertasResponse[number] | null>(null)
-const editForm = reactive({
-  montoTotal: 0,
-  montoMinimo: 0,
-  montoMaximo: 0,
-  tipoCambio: 0,
-})
+const editCantidad = ref<number>(0)
 const saving = ref(false)
 
-// Cancel confirmation modal state
 const confirmCancelOpen = ref(false)
 const cancellingOffer = ref<UsuarioOfertasResponse[number] | null>(null)
 const deleting = ref(false)
 
-async function fetchMyOffers() {
+const inProgressTxByOfferId = computed(() => {
+  const map = new Map<number, number>()
+
+  for (const tx of receivedTransactions.value) {
+    if (!map.has(tx.ofertaId)) {
+      map.set(tx.ofertaId, tx.transaccionId)
+    }
+  }
+
+  return map
+})
+
+
+
+function formatAmount(value: number) {
+  return Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+
+
+function offerStatusColor(estado: string) {
+  if (estado === 'Activa') return 'success'
+  if (estado === 'En Proceso') return 'warning'
+  return 'neutral'
+}
+
+
+
+function getInProgressTransactionId(ofertaId: number) {
+  return inProgressTxByOfferId.value.get(ofertaId) ?? null
+}
+
+function openInProgressOffer(item: UsuarioOfertasResponse[number]) {
+  if (item.estado !== 'En Proceso') return
+
+  const txId = getInProgressTransactionId(item.ofertaId)
+  if (!txId) {
+    toast.add({
+      title: 'Transacción no encontrada',
+      description: 'No se pudo resolver la transacción asociada a esta oferta.',
+      color: 'warning'
+    })
+    return
+  }
+
+  navigateTo(`/transaction/${txId}`)
+}
+
+async function fetchAllData() {
   loading.value = true
   try {
-    const res = await api<UsuarioOfertasResponse>('/api/ofertas/usuario')
-    offers.value = res ?? []
+    const [offersRes, txRes] = await Promise.all([
+      api<UsuarioOfertasResponse>('/api/ofertas/usuario'),
+      api<TransaccionHistoryResponse>('/api/transacciones/history', { params: { page: 1, pageSize: 200 } })
+    ])
+
+    offers.value = offersRes ?? []
+    receivedTransactions.value = (txRes?.datos ?? []).filter(t => t.miRol === 'Vendedor' && t.estado !== 'Finalizado')
   } catch {
-    toast.add({ title: 'Error', description: 'No se pudieron cargar tus ofertas', color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: 'Error', description: 'No se pudo cargar la información de ofertas.', color: 'error' })
   } finally {
     loading.value = false
   }
 }
 
+
+
 function abrirEditar(item: UsuarioOfertasResponse[number]) {
-  if (item.estado !== 'Activa') {
-    toast.add({ title: 'Acción no permitida', description: 'Solo puedes editar ofertas en estado Activa.', color: 'warning', icon: 'i-lucide-alert-triangle' })
-    return
-  }
+  if (item.estado !== 'Activa') return
   editingOffer.value = item
-  editForm.montoTotal = item.montoTotal
-  editForm.montoMinimo = item.montoMinimo
-  editForm.montoMaximo = item.montoMaximo
-  editForm.tipoCambio = item.tipoCambio
+  editCantidad.value = item.tipoOperacion === 'Compra' ? item.montoRecibo : item.montoTengo
   editModalOpen.value = true
 }
 
@@ -56,32 +101,20 @@ async function guardarEdicion() {
   if (!editingOffer.value) return
   saving.value = true
   try {
-    const body: OfertaUpdateRequest = {
-      monto_total: editForm.montoTotal,
-      monto_minimo: editForm.montoMinimo,
-      monto_maximo: editForm.montoMaximo,
-      tipo_cambio: editForm.tipoCambio,
-    }
-    await api(`/api/ofertas/${editingOffer.value.ofertaId}`, {
-      method: 'PUT',
-      body,
-    })
-    toast.add({ title: 'Oferta actualizada', description: 'Los cambios se guardaron correctamente.', color: 'success', icon: 'i-lucide-circle-check' })
+    const body: OfertaUpdateRequest = { cantidad: Number(editCantidad.value) }
+    await api(`/api/ofertas/${editingOffer.value.ofertaId}`, { method: 'PUT', body })
+    toast.add({ title: 'Oferta actualizada', description: 'La cantidad se actualizó correctamente.', color: 'success' })
     editModalOpen.value = false
-    editingOffer.value = null
-    await fetchMyOffers()
+    await fetchAllData()
   } catch {
-    toast.add({ title: 'Error', description: 'No se pudo actualizar la oferta.', color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: 'Error', description: 'No se pudo actualizar la oferta.', color: 'error' })
   } finally {
     saving.value = false
   }
 }
 
 function confirmarCancelar(item: UsuarioOfertasResponse[number]) {
-  if (item.estado !== 'Activa') {
-    toast.add({ title: 'Acción no permitida', description: 'Solo puedes cancelar ofertas en estado Activa.', color: 'warning', icon: 'i-lucide-alert-triangle' })
-    return
-  }
+  if (item.estado !== 'Activa') return
   cancellingOffer.value = item
   confirmCancelOpen.value = true
 }
@@ -90,151 +123,137 @@ async function ejecutarCancelacion() {
   if (!cancellingOffer.value) return
   deleting.value = true
   try {
-    await api(`/api/ofertas/${cancellingOffer.value.ofertaId}`, {
-      method: 'DELETE',
-    })
-    toast.add({ title: 'Oferta cancelada', description: 'La oferta se canceló correctamente.', color: 'success', icon: 'i-lucide-circle-check' })
+    await api(`/api/ofertas/${cancellingOffer.value.ofertaId}`, { method: 'DELETE' })
+    toast.add({ title: 'Oferta cancelada', color: 'success' })
     confirmCancelOpen.value = false
-    cancellingOffer.value = null
-    await fetchMyOffers()
+    await fetchAllData()
   } catch {
-    toast.add({ title: 'Error', description: 'No se pudo cancelar la oferta.', color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: 'Error', description: 'No se pudo cancelar la oferta.', color: 'error' })
   } finally {
     deleting.value = false
   }
 }
 
-onMounted(fetchMyOffers)
+onMounted(async () => {
+  if (route.query.view) {
+    await navigateTo('/my-offers', { replace: true })
+    return
+  }
+
+  await fetchAllData()
+})
 </script>
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
-    <header class="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
-      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <h1 class="text-xl font-bold">Mis Ofertas</h1>
-        <UButton label="Volver" color="neutral" variant="ghost" icon="i-lucide-arrow-left" @click="navigateTo('/debug')" />
-      </div>
-    </header>
+    <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div class="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 class="text-xl font-bold text-neutral-900 dark:text-white">Mis ofertas</h1>
+          <p class="text-sm text-neutral-500 mt-1">Gestiona tus ofertas publicadas.</p>
+        </div>
 
-    <main class="max-w-7xl mx-auto px-6 py-8 space-y-4">
+        <UButton
+          label="Nueva Oferta"
+          color="primary"
+          icon="i-lucide-plus"
+          @click="navigateTo('/offers/new')"
+          class="font-semibold cursor-pointer"
+        />
+      </div>
+
       <div v-if="loading" class="grid gap-4">
-        <div v-for="i in 3" :key="i" class="animate-pulse bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 space-y-3">
-          <div class="flex justify-between">
-            <div class="h-5 w-24 bg-neutral-200 dark:bg-neutral-700 rounded" />
-            <div class="h-5 w-16 bg-neutral-200 dark:bg-neutral-700 rounded" />
-          </div>
-          <div class="h-4 w-full bg-neutral-200 dark:bg-neutral-700 rounded" />
-          <div class="h-4 w-3/4 bg-neutral-200 dark:bg-neutral-700 rounded" />
-          <div class="flex justify-end gap-2">
-            <div class="h-8 w-20 bg-neutral-200 dark:bg-neutral-700 rounded" />
-            <div class="h-8 w-24 bg-neutral-200 dark:bg-neutral-700 rounded" />
-          </div>
+        <USkeleton v-for="i in 3" :key="i" class="h-28 rounded-xl" />
+      </div>
+
+      <template v-else>
+        <div v-if="offers.length === 0" class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl py-16 text-center">
+          <p class="text-neutral-500 font-medium">Aún no tienes ofertas creadas</p>
         </div>
-      </div>
 
-      <div v-else-if="offers.length === 0" class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl py-16 text-center">
-        <UIcon name="i-lucide-inbox" class="size-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
-        <p class="text-neutral-500 font-medium">Aún no tienes ofertas</p>
-        <p class="text-sm text-neutral-400 mt-1">Crea una oferta desde el marketplace.</p>
-      </div>
-
-      <div v-else class="grid gap-4">
-        <div
-          v-for="item in offers"
-          :key="item.ofertaId"
-          :class="[
-            'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 transition-all',
-            item.estado === 'Activa' ? 'cursor-pointer hover:border-primary-500/50 hover:shadow-sm' : 'opacity-85'
-          ]"
-          @click="item.estado === 'Activa' ? abrirEditar(item) : null"
-        >
-          <div class="flex items-start justify-between mb-3">
-            <div class="flex items-center gap-2">
-              <UBadge :color="item.tipoOperacion === 'Venta' ? 'error' : 'success'" variant="soft" size="sm">
-                {{ item.tipoOperacion }}
-              </UBadge>
-              <span class="text-lg font-bold">{{ item.moneda }}</span>
+        <div v-else class="grid gap-4">
+          <div
+            v-for="item in offers"
+            :key="item.ofertaId"
+            :class="[
+              'group rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 p-5 space-y-4 transition-all duration-200',
+              item.estado === 'En Proceso'
+                ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/30'
+                : ''
+            ]"
+            @click="openInProgressOffer(item)"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-lg font-extrabold text-neutral-900 dark:text-white">Oferta #{{ item.ofertaId }}</p>
+                <p class="text-xs sm:text-sm text-neutral-500 mt-0.5 truncate">
+                  {{ item.tipoOperacion }} · {{ item.monedaTengo }} → {{ item.monedaRecibo }}
+                </p>
+              </div>
+              <UBadge :color="offerStatusColor(item.estado)" variant="soft" class="shrink-0">{{ item.estado }}</UBadge>
             </div>
-            <span class="text-lg font-mono font-semibold">
-              TC {{ Number(item.tipoCambio).toFixed(2) }}
-            </span>
+
+            <div class="grid sm:grid-cols-3 gap-3 text-sm">
+              <div class="rounded-xl border border-default bg-muted/20 p-3.5">
+                <p class="text-[11px] uppercase tracking-wide text-neutral-500 font-semibold">Tú entregas</p>
+                <p class="font-extrabold text-rose-500 mt-1">{{ formatAmount(item.montoTengo) }} {{ item.monedaTengo }}</p>
+              </div>
+              <div class="rounded-xl border border-default bg-muted/20 p-3.5">
+                <p class="text-[11px] uppercase tracking-wide text-neutral-500 font-semibold">Tú recibes</p>
+                <p class="font-extrabold text-emerald-500 mt-1">{{ formatAmount(item.montoRecibo) }} {{ item.monedaRecibo }}</p>
+              </div>
+              <div class="rounded-xl border border-default bg-muted/20 p-3.5">
+                <p class="text-[11px] uppercase tracking-wide text-neutral-500 font-semibold">Tipo de cambio</p>
+                <p class="font-extrabold mt-1 text-neutral-900 dark:text-neutral-100">{{ Number(item.tipoCambio).toFixed(6) }}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+              <p v-if="item.estado !== 'Activa'" class="text-xs text-neutral-500 font-medium">
+                Esta oferta está en proceso y no puede editarse ni cancelarse.
+              </p>
+
+              <div
+                v-if="item.estado === 'En Proceso'"
+                class="text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                Abrir transacción
+                <UIcon name="i-lucide-arrow-right" class="size-3.5 ml-1 inline-block" />
+              </div>
+
+              <div v-if="item.estado === 'Activa'" class="ml-auto flex justify-end gap-2">
+                <UButton label="Editar" color="neutral" variant="outline" icon="i-lucide-pencil" @click.stop="abrirEditar(item)" />
+                <UButton label="Cancelar" color="error" variant="outline" icon="i-lucide-x" @click.stop="confirmarCancelar(item)" />
+              </div>
+            </div>
           </div>
-
-          <div class="grid grid-cols-3 gap-4 text-sm mb-4">
-            <div>
-              <p class="text-neutral-400 text-xs">Total</p>
-              <p class="font-medium">{{ Number(item.montoTotal).toLocaleString() }} {{ item.moneda }}</p>
-            </div>
-            <div>
-              <p class="text-neutral-400 text-xs">Mínimo</p>
-              <p class="font-medium">{{ Number(item.montoMinimo).toLocaleString() }} {{ item.moneda }}</p>
-            </div>
-            <div>
-              <p class="text-neutral-400 text-xs">Máximo</p>
-              <p class="font-medium">{{ Number(item.montoMaximo).toLocaleString() }} {{ item.moneda }}</p>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-neutral-800">
-            <div class="flex items-center gap-2 text-sm">
-              <UIcon name="i-lucide-building" class="size-4 text-neutral-400" />
-              <span>{{ item.metodoPago?.banco ?? 'Sin banco asignado' }}</span>
-            </div>
-            <UBadge :color="item.estado === 'Activa' ? 'primary' : 'warning'" variant="subtle" size="sm">
-              {{ item.estado }}
-            </UBadge>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <!-- Edit Modal -->
-    <UModal v-model:open="editModalOpen" title="Editar Oferta" description="Modifica los campos que deseas actualizar o elimina la oferta.">
-      <template #body>
-        <div class="space-y-4">
-          <UFormField label="Monto Total" required>
-            <UInput v-model.number="editForm.montoTotal" type="number" step="0.01" placeholder="Monto total" class="w-full" :min="0" />
-          </UFormField>
-          <UFormField label="Monto Mínimo" required>
-            <UInput v-model.number="editForm.montoMinimo" type="number" step="0.01" placeholder="Monto mínimo" class="w-full" :min="0" />
-          </UFormField>
-          <UFormField label="Monto Máximo" required>
-            <UInput v-model.number="editForm.montoMaximo" type="number" step="0.01" placeholder="Monto máximo" class="w-full" :min="0" />
-          </UFormField>
-          <UFormField label="Tipo de Cambio" required>
-            <UInput v-model.number="editForm.tipoCambio" type="number" step="0.0001" placeholder="Tipo de cambio" class="w-full" :min="0" />
-          </UFormField>
         </div>
       </template>
-      <template #footer="{ close }">
-        <div class="flex items-center justify-between w-full">
-          <UButton label="Eliminar Oferta" color="error" variant="outline" icon="i-lucide-trash-2" @click="() => { close(); if (editingOffer) confirmarCancelar(editingOffer); }" />
-          <div class="flex gap-2">
-            <UButton label="Cancelar" color="neutral" variant="outline" @click="close" />
-            <UButton label="Guardar cambios" color="primary" :loading="saving" @click="guardarEdicion" />
-          </div>
+    </main>
+
+    <UModal v-model:open="editModalOpen" title="Editar cantidad">
+      <template #body>
+        <UFormField label="Nueva cantidad" required>
+          <UInput v-model.number="editCantidad" type="number" step="0.01" :min="0" class="w-full" />
+        </UFormField>
+      </template>
+      <template #footer>
+        <div class="flex gap-2 justify-end w-full">
+          <UButton label="Cerrar" color="neutral" variant="outline" @click="editModalOpen = false" />
+          <UButton label="Guardar" color="primary" :loading="saving" @click="guardarEdicion" />
         </div>
       </template>
     </UModal>
 
-    <!-- Cancel Confirmation Modal -->
-    <UModal v-model:open="confirmCancelOpen" title="Cancelar Oferta" description="¿Estás seguro de cancelar esta oferta? Esta acción no se puede deshacer.">
+    <UModal v-model:open="confirmCancelOpen" title="Cancelar oferta">
       <template #body>
-        <div v-if="cancellingOffer" class="space-y-3 p-2">
-          <div class="flex items-center gap-3 p-4 bg-error/5 border border-error/20 rounded-xl">
-            <UIcon name="i-lucide-alert-triangle" class="size-8 text-error shrink-0" />
-            <div class="text-sm">
-              <p class="font-medium">Estás por cancelar:</p>
-              <p class="text-neutral-500 mt-1">
-                {{ cancellingOffer.tipoOperacion }} — {{ cancellingOffer.moneda }} — TC {{ Number(cancellingOffer.tipoCambio).toFixed(2) }}
-              </p>
-            </div>
-          </div>
-        </div>
+        <p class="text-sm">¿Seguro que deseas cancelar esta oferta?</p>
       </template>
-      <template #footer="{ close }">
-        <UButton label="No, mantener" color="neutral" variant="outline" @click="close" />
-        <UButton label="Sí, cancelar oferta" color="error" icon="i-lucide-x-circle" :loading="deleting" @click="ejecutarCancelacion" />
+      <template #footer>
+        <div class="flex gap-2 justify-end w-full">
+          <UButton label="No" color="neutral" variant="outline" @click="confirmCancelOpen = false" />
+          <UButton label="Sí, cancelar" color="error" :loading="deleting" @click="ejecutarCancelacion" />
+        </div>
       </template>
     </UModal>
   </div>
