@@ -1,6 +1,6 @@
 import type { UserProfileResponse } from "~/types";
 
-export default defineNuxtRouteMiddleware(async (to) => {
+export default defineNuxtRouteMiddleware(async () => {
   const token = useCookie("auth_token");
   const authStore = useAuthStore();
 
@@ -20,7 +20,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
         esVerificado: profile.esVerificado,
         fotoPerfilUrl: profile.fotoPerfilUrl,
       };
-    } catch (error) {
+    } catch {
       // Si el token es inválido o expiró, limpiamos la sesión
       authStore.logout();
     }
