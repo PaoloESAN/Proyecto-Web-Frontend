@@ -87,16 +87,22 @@ onMounted(fetchAlertas)
         <UButton label="Nueva alerta" color="primary" icon="i-lucide-plus" @click="modalOpen = true" />
       </div>
 
-      <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
+      <div
+        class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
-                <th class="text-left px-5 py-3 font-semibold text-neutral-500 text-xs uppercase tracking-wider">Moneda</th>
-                <th class="text-left px-5 py-3 font-semibold text-neutral-500 text-xs uppercase tracking-wider">Tipo de Cambio Deseado</th>
-                <th class="text-left px-5 py-3 font-semibold text-neutral-500 text-xs uppercase tracking-wider">Estado</th>
-                <th class="text-left px-5 py-3 font-semibold text-neutral-500 text-xs uppercase tracking-wider">Fecha de Creación</th>
-                <th class="text-right px-5 py-3 font-semibold text-neutral-500 text-xs uppercase tracking-wider">Acciones</th>
+                <th class="text-left px-5 py-3 font-semibold text-neutral-500 text-xs uppercase tracking-wider">Moneda
+                </th>
+                <th class="text-left px-5 py-3 font-semibold text-neutral-500 text-xs uppercase tracking-wider">Tipo de
+                  Cambio Deseado</th>
+                <th class="text-left px-5 py-3 font-semibold text-neutral-500 text-xs uppercase tracking-wider">Estado
+                </th>
+                <th class="text-left px-5 py-3 font-semibold text-neutral-500 text-xs uppercase tracking-wider">Fecha de
+                  Creación</th>
+                <th class="text-right px-5 py-3 font-semibold text-neutral-500 text-xs uppercase tracking-wider">
+                  Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -105,15 +111,20 @@ onMounted(fetchAlertas)
                   <div class="h-4 bg-neutral-200 dark:bg-neutral-700 rounded" />
                 </td>
               </tr>
-              <tr v-else v-for="alerta in alertas" :key="alerta.alertaId" class="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors">
+              <tr
+v-for="alerta in alertas" v-else :key="alerta.alertaId"
+                class="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors">
                 <td class="px-5 py-4 font-medium">{{ alerta.moneda }}</td>
                 <td class="px-5 py-4 font-mono">{{ alerta.tipoCambioDeseado }}</td>
                 <td class="px-5 py-4">
                   <UBadge :color="getEstadoColor(alerta.estado)" variant="soft" size="sm">{{ alerta.estado }}</UBadge>
                 </td>
-                <td class="px-5 py-4 text-xs text-neutral-500">{{ new Date(alerta.fechaCreacion).toLocaleDateString() }}</td>
+                <td class="px-5 py-4 text-xs text-neutral-500">{{ new Date(alerta.fechaCreacion).toLocaleDateString() }}
+                </td>
                 <td class="px-5 py-4 text-right">
-                  <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="sm" :loading="deletingId === alerta.alertaId" @click="deleteAlerta(alerta.alertaId)" />
+                  <UButton
+icon="i-lucide-trash-2" color="error" variant="ghost" size="sm"
+                    :loading="deletingId === alerta.alertaId" @click="deleteAlerta(alerta.alertaId)" />
                 </td>
               </tr>
               <tr v-if="!loading && alertas.length === 0">
@@ -128,7 +139,9 @@ onMounted(fetchAlertas)
       </div>
     </main>
 
-    <UModal v-model:open="modalOpen" title="Nueva Alerta" description="Configura una alerta para recibir notificaciones cuando el tipo de cambio alcance el valor deseado.">
+    <UModal
+v-model:open="modalOpen" title="Nueva Alerta"
+      description="Configura una alerta para recibir notificaciones cuando el tipo de cambio alcance el valor deseado.">
       <template #body>
         <UForm id="alerta-form" :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
           <UFormField name="moneda" label="Moneda" required>

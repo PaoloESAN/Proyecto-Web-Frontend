@@ -9,7 +9,6 @@ import type {
   OpenDisputeResponse,
   CalificacionResponse,
   ErrorResponse,
-  MetodoPagoResponse,
 } from "~/types";
 
 definePageMeta({
@@ -19,13 +18,11 @@ definePageMeta({
 });
 
 const route = useRoute();
-const router = useRouter();
 const toast = useToast();
 const api = useApi();
 const authStore = useAuthStore();
 
 const transactionId = Number(route.params.id);
-const selectedAccountId = Number(route.query.accountId);
 
 const loading = ref(true);
 const transaction = ref<TransaccionDetailResponse | null>(null);
@@ -75,10 +72,7 @@ const isBuyer = computed(() => {
   return transaction.value.comprador.usuarioId === authStore.usuario.usuarioId;
 });
 
-const isSeller = computed(() => {
-  if (!transaction.value || !authStore.usuario) return false;
-  return transaction.value.vendedor.usuarioId === authStore.usuario.usuarioId;
-});
+
 
 const contraparte = computed(() => {
   if (!transaction.value) return null;
@@ -99,10 +93,11 @@ async function fetchTransaction() {
     ratingSubmitted.value = response.yaCalificado || false;
 
 
-  } catch (err: any) {
-    if (err.status === 404) {
+  } catch (err) {
+    const error = err as { status?: number };
+    if (error.status === 404) {
       errorMsg.value = "La transacción especificada no existe.";
-    } else if (err.status === 403) {
+    } else if (error.status === 403) {
       errorMsg.value = "No tienes permiso para acceder a esta transacción.";
     } else {
       errorMsg.value = "Ocurrió un error al cargar la transacción.";
@@ -367,8 +362,9 @@ async function confirmReceipt() {
     });
 
     await fetchTransaction();
-  } catch (err: any) {
-    const errorData = err.data as ErrorResponse | undefined;
+  } catch (err) {
+    const error = err as { data?: ErrorResponse };
+    const errorData = error.data;
     toast.add({
       title: "Error al confirmar",
       description: errorData?.mensaje || "No se pudo registrar la confirmación.",
@@ -403,8 +399,9 @@ async function confirmOpenDispute() {
       icon: "i-lucide-alert-triangle",
     });
     await fetchTransaction();
-  } catch (err: any) {
-    const errorData = err.data as ErrorResponse | undefined;
+  } catch (err) {
+    const error = err as { data?: ErrorResponse };
+    const errorData = error.data;
     toast.add({
       title: "Error al abrir disputa",
       description: errorData?.mensaje || "No se pudo abrir la disputa.",
@@ -434,8 +431,9 @@ async function submitRating(event: FormSubmitEvent<RatingSchema>) {
       icon: "i-lucide-check-circle",
     });
     ratingSubmitted.value = true;
-  } catch (err: any) {
-    const errorData = err.data as ErrorResponse | undefined;
+  } catch (err) {
+    const error = err as { data?: ErrorResponse };
+    const errorData = error.data;
     toast.add({
       title: "Error",
       description:
@@ -490,7 +488,7 @@ async function uploadVoucher() {
     const formData = new FormData();
     formData.append("file", voucherFile.value);
 
-    await api<any>(`/api/transacciones/${transactionId}/voucher`, {
+    await api<unknown>(`/api/transacciones/${transactionId}/voucher`, {
       method: "POST",
       body: formData,
     });
@@ -505,8 +503,9 @@ async function uploadVoucher() {
 
     removeVoucher();
     await fetchTransaction();
-  } catch (err: any) {
-    const errorData = err.data as ErrorResponse | undefined;
+  } catch (err) {
+    const error = err as { data?: ErrorResponse };
+    const errorData = error.data;
     toast.add({
       title: "Error al subir voucher",
       description:
@@ -1335,7 +1334,7 @@ onBeforeUnmount(() => {
                     accept="image/jpeg,image/png"
                     class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                     @change="onVoucherSelected"
-                  />
+                  >
                   <div class="space-y-1">
                     <UIcon
                       name="i-lucide-upload-cloud"
@@ -1378,7 +1377,7 @@ onBeforeUnmount(() => {
                       :src="voucherPreview"
                       alt="Vista previa del comprobante"
                       class="max-h-full object-contain"
-                    />
+                    >
                   </div>
                   <UButton
                     label="Enviar Comprobante y Registrar Pago"
@@ -1431,7 +1430,7 @@ onBeforeUnmount(() => {
                         :src="buyerVoucher.imagenUrl"
                         alt="Comprobante Comprador"
                         class="max-h-full object-contain hover:scale-105 transition-transform"
-                      />
+                      >
                     </a>
                   </div>
                   <div class="text-center">
@@ -1472,7 +1471,7 @@ onBeforeUnmount(() => {
                         :src="sellerVoucher.imagenUrl"
                         alt="Comprobante Vendedor"
                         class="max-h-full object-contain hover:scale-105 transition-transform"
-                      />
+                      >
                     </a>
                   </div>
                   <div class="text-center">
@@ -1567,7 +1566,7 @@ onBeforeUnmount(() => {
                 >
                   <span
                     class="size-2 bg-emerald-500 rounded-full animate-pulse"
-                  ></span>
+                  />
                   Conectado
                 </span>
                 <span
@@ -1577,14 +1576,14 @@ onBeforeUnmount(() => {
                   "
                   class="inline-flex items-center gap-1 text-[10px] text-amber-500 font-bold animate-pulse"
                 >
-                  <span class="size-2 bg-amber-500 rounded-full"></span>
+                  <span class="size-2 bg-amber-500 rounded-full"/>
                   Conectando
                 </span>
                 <span
                   v-else
                   class="inline-flex items-center gap-1 text-[10px] text-neutral-400 font-bold"
                 >
-                  <span class="size-2 bg-neutral-400 rounded-full"></span>
+                  <span class="size-2 bg-neutral-400 rounded-full"/>
                   Desconectado
                 </span>
               </div>
@@ -1603,7 +1602,7 @@ onBeforeUnmount(() => {
                   name="i-lucide-messages-square"
                   class="size-8 text-neutral-300 dark:text-neutral-800 mx-auto mb-2"
                 />
-                No hay mensajes aún en esta sala.<br />¡Saluda a tu contraparte!
+                No hay mensajes aún en esta sala.<br >¡Saluda a tu contraparte!
               </div>
 
               <div
@@ -1661,8 +1660,8 @@ onBeforeUnmount(() => {
 
             <!-- Message Input Form -->
             <form
-              @submit.prevent="sendChatMessage"
               class="p-3 border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex gap-2"
+              @submit.prevent="sendChatMessage"
             >
               <UInput
                 v-model="newMessage"

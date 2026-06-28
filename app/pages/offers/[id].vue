@@ -32,8 +32,9 @@ async function fetchOffer() {
   errorMsg.value = null
   try {
     offer.value = await api<OfertaDetalleResponse>(`/api/ofertas/${offerId}`)
-  } catch (err: any) {
-    if (err.status === 404) {
+  } catch (err) {
+    const error = err as { status?: number }
+    if (error.status === 404) {
       errorMsg.value = 'La oferta especificada no existe, está inactiva o ya fue completada.'
     } else {
       errorMsg.value = 'No se pudo cargar la información de la oferta.'
@@ -75,9 +76,11 @@ const schema = z.object({
   metodoPagoId: z.number({ message: 'Selecciona una cuenta bancaria' })
 })
 
+type Schema = z.output<typeof schema>
+
 const isOwnOffer = computed(() => authStore.isAuthenticated && offer.value?.usuarioCreador?.usuarioId === authStore.usuario?.usuarioId)
 
-async function onSubmit(_event: FormSubmitEvent<any>) {
+async function onSubmit(_event: FormSubmitEvent<Schema>) {
   if (!authStore.isAuthenticated) {
     toast.add({ title: 'Inicia sesión', description: 'Debes iniciar sesión para operar.', color: 'warning' })
     await navigateTo('/login')
@@ -139,8 +142,9 @@ async function executeTransaction() {
 
     confirmModalOpen.value = false
     navigateTo(`/transaction/${res.transaccion.transaccionId}?accountId=${state.metodoPagoId}`)
-  } catch (error: any) {
-    const errorData = error.data as ErrorResponse | undefined
+  } catch (error) {
+    const err = error as { data?: ErrorResponse }
+    const errorData = err.data
     toast.add({
       title: 'Error al procesar',
       description: errorData?.mensaje || 'No se pudo crear la transacción.',

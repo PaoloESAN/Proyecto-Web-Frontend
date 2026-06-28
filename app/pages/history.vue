@@ -18,7 +18,7 @@ const loading = ref(false)
 async function fetchHistory() {
   loading.value = true
   try {
-    const params: Record<string, any> = { page: page.value, pageSize, estado: 'Finalizado' }
+    const params: Record<string, string | number> = { page: page.value, pageSize, estado: 'Finalizado' }
     const res = await api<TransaccionHistoryResponse>('/api/transacciones/history', { params })
     data.value = res
   } catch {
@@ -95,8 +95,8 @@ onMounted(() => {
                 </td>
               </tr>
               <tr
-                v-else
                 v-for="tx in data?.datos || []"
+                v-else
                 :key="tx.transaccionId"
                 class="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer"
                 @click="irATransaccion(tx.transaccionId)"

@@ -7,19 +7,22 @@ export default defineNuxtPlugin(() => {
     baseURL: config.public.apiBase,
     onRequest({ options }) {
       if (token.value) {
-        options.headers = options.headers || {};
-        const headers = options.headers as any;
+        let headers = options.headers;
+        if (!headers) {
+          headers = {};
+          options.headers = headers;
+        }
         if (headers instanceof Headers) {
           headers.set("Authorization", `Bearer ${token.value}`);
         } else if (Array.isArray(headers)) {
           headers.push(["Authorization", `Bearer ${token.value}`]);
         } else {
-          headers["Authorization"] = `Bearer ${token.value}`;
+          (headers as Record<string, string>)["Authorization"] = `Bearer ${token.value}`;
         }
       }
     },
     onResponseError({ response, options }) {
-      const opts = options as any;
+      const opts = options as { ignoreGlobalErrors?: boolean };
       if (opts.ignoreGlobalErrors) return;
 
       if (response.status === 401) {

@@ -157,8 +157,8 @@ onMounted(async () => {
           label="Nueva Oferta"
           color="primary"
           icon="i-lucide-plus"
-          @click="navigateTo('/offers/new')"
           class="font-semibold cursor-pointer"
+          @click="navigateTo('/offers/new')"
         />
       </div>
 

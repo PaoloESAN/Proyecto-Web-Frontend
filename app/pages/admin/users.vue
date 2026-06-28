@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { GetUsersAdminResponse, UpdateUserStatusResponse, ErrorResponse } from '~/types'
+import type { GetUsersAdminResponse, UpdateUserStatusResponse } from '~/types'
 
 definePageMeta({
   middleware: ['auth'],
@@ -26,7 +26,7 @@ function getEstadoParam(val: string) {
 async function fetchUsers() {
   loading.value = true
   try {
-    const params: Record<string, any> = { page: page.value, pageSize }
+    const params: Record<string, string | number> = { page: page.value, pageSize }
     if (search.value) params.search = search.value
     const estado = getEstadoParam(estadoFilter.value)
     if (estado) params.estado = estado
@@ -69,7 +69,7 @@ async function updateStatus(usuarioId: number, nuevoEstado: 'Activo' | 'Suspendi
 async function updateVerification(usuarioId: number, esVerificado: boolean) {
   updatingId.value = usuarioId
   try {
-    await api<any>(`/api/admin/users/${usuarioId}/verify`, {
+    await api<unknown>(`/api/admin/users/${usuarioId}/verify`, {
       method: 'PUT',
       body: { esVerificado }
     })
@@ -130,7 +130,7 @@ function totalPages() {
                   <div class="h-4 bg-neutral-200 dark:bg-neutral-700 rounded" />
                 </td>
               </tr>
-              <tr v-else v-for="user in data?.datos || []" :key="user.usuarioId" class="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors">
+              <tr v-for="user in data?.datos || []" v-else :key="user.usuarioId" class="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors">
                 <td class="px-5 py-4 font-mono text-xs text-neutral-500">{{ user.usuarioId }}</td>
                 <td class="px-5 py-4 font-medium">{{ user.nombres }} {{ user.apellidos }}</td>
                 <td class="px-5 py-4 text-neutral-500">{{ user.correo }}</td>
@@ -146,15 +146,17 @@ function totalPages() {
                 </td>
                 <td class="px-5 py-4 text-xs text-neutral-500">{{ new Date(user.fechaRegistro).toLocaleDateString() }}</td>
                 <td class="px-5 py-4 text-right">
-                  <UDropdownMenu :items="[
-                    [{ label: 'Activo', icon: 'i-lucide-check-circle', onSelect: () => updateStatus(user.usuarioId, 'Activo') }],
-                    [{ label: 'Bloqueado', icon: 'i-lucide-ban', onSelect: () => updateStatus(user.usuarioId, 'Bloqueado') }],
-                    [
-                      user.esVerificado
-                        ? { label: 'Quitar Verificación', icon: 'i-lucide-shield-off', onSelect: () => updateVerification(user.usuarioId, false) }
-                        : { label: 'Verificar Identidad', icon: 'i-lucide-shield-check', onSelect: () => updateVerification(user.usuarioId, true) }
-                    ]
-                  ]">
+                  <UDropdownMenu
+                    :items="[
+                      [{ label: 'Activo', icon: 'i-lucide-check-circle', onSelect: () => updateStatus(user.usuarioId, 'Activo') }],
+                      [{ label: 'Bloqueado', icon: 'i-lucide-ban', onSelect: () => updateStatus(user.usuarioId, 'Bloqueado') }],
+                      [
+                        user.esVerificado
+                          ? { label: 'Quitar Verificación', icon: 'i-lucide-shield-off', onSelect: () => updateVerification(user.usuarioId, false) }
+                          : { label: 'Verificar Identidad', icon: 'i-lucide-shield-check', onSelect: () => updateVerification(user.usuarioId, true) }
+                      ]
+                    ]"
+                  >
                     <UButton label="Cambiar estado" color="neutral" variant="outline" size="xs" :loading="updatingId === user.usuarioId" icon="i-lucide-chevron-down" trailing />
                   </UDropdownMenu>
                 </td>

@@ -41,8 +41,9 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
     // Redirigir a la pantalla principal
     await navigateTo('/marketplace')
-  } catch (error: any) {
-    const errorData = error.data as ErrorResponse | undefined;
+  } catch (error) {
+    const err = error as { data?: ErrorResponse };
+    const errorData = err.data;
     if (errorData && errorData.mensaje) {
       errorMessage.value = errorData.mensaje;
     } else {

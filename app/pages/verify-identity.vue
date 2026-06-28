@@ -9,7 +9,6 @@ definePageMeta({
 
 const toast = useToast()
 const api = useApi()
-const router = useRouter()
 const authStore = useAuthStore()
 
 const dniFrontalFile = ref<File | null>(null)
@@ -118,8 +117,9 @@ async function submitKyc() {
       color: 'success',
       icon: 'i-lucide-check-circle',
     })
-  } catch (err: any) {
-    const errorData = err.data as { mensaje?: string } | undefined
+  } catch (err) {
+    const error = err as { data?: { mensaje?: string } }
+    const errorData = error.data
     toast.add({
       title: 'Error al verificar',
       description: errorData?.mensaje || 'No se pudo verificar la identidad.',
@@ -181,7 +181,7 @@ async function submitKyc() {
               accept="image/jpeg,image/png"
               class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
               @change="onDniFrontalSelected"
-            />
+            >
             <div class="space-y-1">
               <UIcon name="i-lucide-id-card" class="size-8 text-neutral-400 mx-auto" />
               <p class="text-xs font-bold text-neutral-600 dark:text-neutral-300">
@@ -202,7 +202,7 @@ async function submitKyc() {
               <UButton icon="i-lucide-trash" color="error" variant="ghost" size="xs" @click="removeFrontal" />
             </div>
             <div class="aspect-video w-full max-h-48 rounded-lg overflow-hidden border border-neutral-100 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-950 flex items-center justify-center">
-              <img :src="dniFrontalPreview" alt="Vista previa DNI Frontal" class="max-h-full object-contain" />
+              <img :src="dniFrontalPreview" alt="Vista previa DNI Frontal" class="max-h-full object-contain" >
             </div>
           </div>
 
@@ -227,7 +227,7 @@ async function submitKyc() {
               accept="image/jpeg,image/png"
               class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
               @change="onDniPosteriorSelected"
-            />
+            >
             <div class="space-y-1">
               <UIcon name="i-lucide-id-card" class="size-8 text-neutral-400 mx-auto" />
               <p class="text-xs font-bold text-neutral-600 dark:text-neutral-300">
@@ -248,7 +248,7 @@ async function submitKyc() {
               <UButton icon="i-lucide-trash" color="error" variant="ghost" size="xs" @click="removePosterior" />
             </div>
             <div class="aspect-video w-full max-h-48 rounded-lg overflow-hidden border border-neutral-100 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-950 flex items-center justify-center">
-              <img :src="dniPosteriorPreview" alt="Vista previa DNI Posterior" class="max-h-full object-contain" />
+              <img :src="dniPosteriorPreview" alt="Vista previa DNI Posterior" class="max-h-full object-contain" >
             </div>
           </div>
 

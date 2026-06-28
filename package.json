@@ -8,16 +8,16 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "lint": "eslint",
+    "lint:fix": "eslint --fix"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.111",
     "@microsoft/signalr": "^10.0.0",
+    "@nuxt/eslint": "1.16.0",
     "@nuxt/ui": "^4.8.2",
     "@pinia/nuxt": "0.11.3",
+    "eslint": "^10.6.0",
     "nuxt": "^4.4.7",
     "pinia": "^3.0.4",
     "tailwindcss": "^4.3.0",
@@ -26,7 +26,6 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "oxfmt": "^0.56.0",
-    "oxlint": "^1.71.0"
+    "typescript": "^6.0.3"
   }
 }

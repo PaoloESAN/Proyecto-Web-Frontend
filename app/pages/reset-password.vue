@@ -8,7 +8,6 @@ definePageMeta({
 });
 
 const route = useRoute();
-const router = useRouter();
 
 const token = computed(() => route.query.token as string | undefined);
 
@@ -49,8 +48,9 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       },
     });
     success.value = true;
-  } catch (error: any) {
-    const errorData = error.data as ErrorResponse | undefined;
+  } catch (error) {
+    const err = error as { data?: ErrorResponse };
+    const errorData = err.data;
     errorMessage.value =
       errorData?.mensaje ||
       "No se pudo restablecer la contraseña. El enlace puede haber expirado.";

@@ -31,8 +31,9 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       body: event.data,
     });
     sent.value = true;
-  } catch (error: any) {
-    const errorData = error.data as ErrorResponse | undefined;
+  } catch (error) {
+    const err = error as { data?: ErrorResponse };
+    const errorData = err.data;
     errorMessage.value =
       errorData?.mensaje ||
       "No se pudo procesar la solicitud. Inténtalo de nuevo.";

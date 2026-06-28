@@ -257,7 +257,7 @@ onMounted(fetchMetodosPago)
             </section>
 
             <div class="flex items-center justify-end gap-3 pt-6 border-t border-neutral-100 dark:border-neutral-800">
-              <UButton label="Cancelar" color="neutral" variant="outline" size="lg" @click="navigateTo('/my-offers')" class="cursor-pointer" />
+              <UButton label="Cancelar" color="neutral" variant="outline" size="lg" class="cursor-pointer" @click="navigateTo('/my-offers')" />
               <UButton type="submit" label="Publicar oferta" color="primary" size="lg" :loading="submitting" icon="i-lucide-rocket" trailing />
             </div>
           </UForm>

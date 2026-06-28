@@ -3,7 +3,6 @@ import type {
   GetDisputesAdminResponse,
   ResolveDisputeResponse,
   MensajeChatResponse,
-  ErrorResponse,
   TransaccionDetailResponse,
   OfertaDetalleResponse
 } from '~/types'
@@ -105,7 +104,7 @@ async function selectDispute(d: GetDisputesAdminResponse['datos'][0]) {
   try {
     const msgs = await api<MensajeChatResponse[]>(`/api/transacciones/${d.transaccion.transaccionId}/messages`, {
       ignoreGlobalErrors: true
-    } as any)
+    } as { ignoreGlobalErrors?: boolean })
     chatMessages.value = msgs
   } catch {
     chatMessages.value = []
@@ -229,7 +228,9 @@ onMounted(() => {
         </div>
 
         <div class="flex-1 overflow-y-auto p-4 space-y-3">
-          <USkeleton v-if="loading" v-for="i in 4" :key="i" class="h-28 rounded-lg" />
+          <template v-if="loading">
+            <USkeleton v-for="i in 4" :key="i" class="h-28 rounded-lg" />
+          </template>
 
           <template v-else-if="filteredDisputes.length > 0">
             <div
@@ -402,7 +403,9 @@ onMounted(() => {
                   </div>
                 </div>
                 <div class="p-4 flex-1">
-                  <USkeleton v-if="loadingTxDetails" v-for="i in 2" :key="i" class="h-40 rounded-lg mb-3" />
+                  <template v-if="loadingTxDetails">
+                    <USkeleton v-for="i in 2" :key="i" class="h-40 rounded-lg mb-3" />
+                  </template>
 
                   <div v-else-if="transactionDetails && transactionDetails.comprobantes && transactionDetails.comprobantes.length > 0" class="space-y-4">
                     <div
@@ -411,7 +414,8 @@ onMounted(() => {
                       class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 overflow-hidden p-3"
                     >
                       <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-bold px-2.5 py-0.5 rounded-full"
+                        <span
+                          class="text-xs font-bold px-2.5 py-0.5 rounded-full"
                           :class="c.usuarioId === transactionDetails.comprador.usuarioId
                             ? 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400'
                             : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400'"
@@ -436,7 +440,7 @@ onMounted(() => {
                           :src="c.imagenUrl"
                           alt="Comprobante de Pago"
                           class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
-                        />
+                        >
                         <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
                           <span class="text-white text-xs font-semibold flex items-center gap-1">
                             <UIcon name="i-lucide-zoom-in" class="size-4" />
@@ -468,7 +472,7 @@ onMounted(() => {
                           :src="c.imagenUrl"
                           alt="Comprobante"
                           class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
-                        />
+                        >
                         <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
                           <span class="text-white text-xs font-semibold flex items-center gap-1">
                             <UIcon name="i-lucide-zoom-in" class="size-4" />
@@ -501,7 +505,9 @@ onMounted(() => {
                     </span>
                   </div>
 
-                  <USkeleton v-if="loadingMessages" v-for="i in 3" :key="i" class="h-20 rounded-lg" />
+                  <template v-if="loadingMessages">
+                    <USkeleton v-for="i in 3" :key="i" class="h-20 rounded-lg" />
+                  </template>
 
                   <template v-else-if="chatMessages.length > 0">
                     <div v-for="msg in chatMessages" :key="msg.mensajeId">
@@ -599,14 +605,13 @@ onMounted(() => {
         </div>
       </div>
     </div>
-  </div>
 
   <!-- Modal para ver el comprobante en tamaño completo -->
   <UModal v-model:open="isImageModalOpen" title="Vista Previa de Comprobante" :ui="{ content: 'max-w-4xl' }">
     <template #body>
       <div class="flex flex-col items-center">
         <div class="w-full overflow-auto max-h-[70vh] flex justify-center bg-neutral-100 dark:bg-neutral-900 rounded-lg p-2 border border-neutral-200 dark:border-neutral-800">
-          <img :src="selectedImage" alt="Comprobante de Pago Completo" class="max-w-full h-auto object-contain rounded" />
+          <img :src="selectedImage" alt="Comprobante de Pago Completo" class="max-w-full h-auto object-contain rounded" >
         </div>
       </div>
     </template>
@@ -647,4 +652,5 @@ onMounted(() => {
       </div>
     </template>
   </UModal>
+  </div>
 </template>

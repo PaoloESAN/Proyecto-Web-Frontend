@@ -4,9 +4,8 @@ import type { FormSubmitEvent } from "@nuxt/ui";
 import type {
   UserProfileResponse,
   MetodoPagoResponse,
-  MetodoPagoCreateRequest,
   UpdateProfileResponse,
-  VerifyIdentityResponse,
+  ErrorResponse
 } from "~/types";
 
 definePageMeta({
@@ -114,10 +113,11 @@ async function onSubmitProfile(event: FormSubmitEvent<ProfileSchema>) {
       authStore.usuario.fotoPerfilUrl = res.usuario.fotoPerfilUrl;
     }
     editProfileModalOpen.value = false;
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { data?: ErrorResponse & { message?: string } };
     const errorMsg =
-      error.data?.mensaje ||
-      error.data?.message ||
+      err.data?.mensaje ||
+      err.data?.message ||
       "No se pudo actualizar el perfil";
     toast.add({
       title: "Error",
@@ -317,25 +317,16 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50"
-  >
+  <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50">
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       <div class="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-8">
         <aside class="space-y-6">
           <div
-            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 flex flex-col items-center text-center shadow-sm space-y-4"
-          >
+            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 flex flex-col items-center text-center shadow-sm space-y-4">
             <div class="flex items-center justify-center">
               <USkeleton v-if="loadingProfile" class="size-24 rounded-full" />
-              <UAvatar
-                v-else
-                :src="authStore.avatarUrl || undefined"
-                :alt="profile?.nombres ?? '?'"
-                :text="profile?.nombres?.charAt(0).toUpperCase() ?? '?'"
-                size="2xl"
-                class="mx-auto"
-              />
+              <UAvatar v-else :src="authStore.avatarUrl || undefined" :alt="profile?.nombres ?? '?'"
+                :text="profile?.nombres?.charAt(0).toUpperCase() ?? '?'" size="2xl" class="mx-auto" />
             </div>
 
             <div>
@@ -348,35 +339,21 @@ onMounted(() => {
               <p v-else class="text-sm text-muted">{{ profile?.correo }}</p>
 
               <USkeleton v-if="loadingProfile" class="h-4 w-32 mx-auto" />
-              <div
-                v-else
-                class="flex items-center justify-center gap-1.5 text-xs text-amber-500 font-bold mt-1"
-              >
+              <div v-else class="flex items-center justify-center gap-1.5 text-xs text-amber-500 font-bold mt-1">
                 <UIcon name="i-lucide-star" class="size-3.5 fill-amber-500" />
-                <span
-                  >{{
-                    profile?.calificacion?.toFixed(2) ?? "0.00"
-                  }}
-                  (Calificación)</span
-                >
+                <span>{{
+                  profile?.calificacion?.toFixed(2) ?? "0.00"
+                }}
+                  (Calificación)</span>
               </div>
             </div>
           </div>
 
           <div
-            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 space-y-4 shadow-sm"
-          >
+            class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 space-y-4 shadow-sm">
             <div class="flex items-center justify-between">
-              <span
-                class="text-xs font-semibold text-muted uppercase tracking-wider"
-                >Estado</span
-              >
-              <UBadge
-                v-if="profile?.esVerificado"
-                color="success"
-                variant="soft"
-                size="sm"
-              >
+              <span class="text-xs font-semibold text-muted uppercase tracking-wider">Estado</span>
+              <UBadge v-if="profile?.esVerificado" color="success" variant="soft" size="sm">
                 <template #leading>
                   <UIcon name="i-lucide-check-circle" class="size-3.5" />
                 </template>
@@ -389,27 +366,12 @@ onMounted(() => {
                 Pendiente
               </UBadge>
             </div>
-            <UButton
-              v-if="!profile?.esVerificado"
-              label="Verificar identidad"
-              color="primary"
-              variant="soft"
-              icon="i-lucide-id-card"
-              block
-              @click="navigateTo('/verify-identity')"
-              class="cursor-pointer"
-            />
+            <UButton v-if="!profile?.esVerificado" label="Verificar identidad" color="primary" variant="soft"
+              icon="i-lucide-id-card" block class="cursor-pointer" @click="navigateTo('/verify-identity')" />
           </div>
 
-          <UButton
-            label="Editar Perfil"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-pencil"
-            block
-            @click="openEditProfile"
-            class="cursor-pointer"
-          />
+          <UButton label="Editar Perfil" color="neutral" variant="outline" icon="i-lucide-pencil" block
+            class="cursor-pointer" @click="openEditProfile" />
         </aside>
 
         <section class="space-y-4">
@@ -417,104 +379,57 @@ onMounted(() => {
             <h2 class="text-lg font-bold text-highlighted">
               Mis Cuentas Bancarias
             </h2>
-            <UButton
-              label="Agregar cuenta"
-              color="primary"
-              icon="i-lucide-plus"
-              @click="openAddAccount"
-            />
+            <UButton label="Agregar cuenta" color="primary" icon="i-lucide-plus" @click="openAddAccount" />
           </div>
 
-          <div
-            v-if="loadingAccounts"
-            class="grid grid-cols-1 md:grid-cols-2 gap-4"
-          >
+          <div v-if="loadingAccounts" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <USkeleton v-for="i in 2" :key="i" class="h-32 rounded-xl" />
           </div>
 
           <template v-else-if="metodosPago.length > 0">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div
-                v-for="cuenta in metodosPago"
-                :key="cuenta.metodoPagoId"
-                class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 flex flex-col justify-between h-full relative shadow-sm"
-              >
+              <div v-for="cuenta in metodosPago" :key="cuenta.metodoPagoId"
+                class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 flex flex-col justify-between h-full relative shadow-sm">
                 <div class="flex items-start justify-between mb-4">
                   <div class="flex items-center gap-3 min-w-0">
                     <div
-                      class="size-10 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0"
-                    >
-                      <UIcon
-                        name="i-lucide-landmark"
-                        class="size-5 text-neutral-500 dark:text-neutral-400"
-                      />
+                      class="size-10 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
+                      <UIcon name="i-lucide-landmark" class="size-5 text-neutral-500 dark:text-neutral-400" />
                     </div>
                     <div class="min-w-0">
-                      <p
-                        class="font-semibold text-sm truncate text-neutral-900 dark:text-white"
-                      >
+                      <p class="font-semibold text-sm truncate text-neutral-900 dark:text-white">
                         {{ cuenta.banco }}
                       </p>
-                      <p
-                        class="text-xs text-neutral-500 dark:text-neutral-400 truncate"
-                      >
+                      <p class="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                         {{ cuenta.nombreTitular }}
                       </p>
                     </div>
                   </div>
                   <div class="flex items-center gap-1 shrink-0">
-                    <UButton
-                      icon="i-lucide-pencil"
-                      color="neutral"
-                      variant="ghost"
-                      size="xs"
-                      class="rounded-full cursor-pointer"
-                      @click="openEditAccount(cuenta)"
-                    />
-                    <UButton
-                      icon="i-lucide-trash-2"
-                      color="error"
-                      variant="ghost"
-                      size="xs"
-                      class="shrink-0 rounded-full cursor-pointer"
-                      @click="confirmDelete(cuenta)"
-                    />
+                    <UButton icon="i-lucide-pencil" color="neutral" variant="ghost" size="xs"
+                      class="rounded-full cursor-pointer" @click="openEditAccount(cuenta)" />
+                    <UButton icon="i-lucide-trash-2" color="error" variant="ghost" size="xs"
+                      class="shrink-0 rounded-full cursor-pointer" @click="confirmDelete(cuenta)" />
                   </div>
                 </div>
                 <div
-                  class="flex items-center justify-between mt-auto pt-4 border-t border-neutral-100 dark:border-neutral-800"
-                >
-                  <span
-                    class="text-sm font-semibold text-neutral-900 dark:text-white break-all tracking-normal"
-                    >{{ cuenta.numeroCuenta }}</span
-                  >
-                  <UBadge
-                    color="neutral"
-                    variant="soft"
-                    size="sm"
-                    class="shrink-0 ml-2"
-                    >{{ cuenta.tipoMoneda }}</UBadge
-                  >
+                  class="flex items-center justify-between mt-auto pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                  <span class="text-sm font-semibold text-neutral-900 dark:text-white break-all tracking-normal">{{
+                    cuenta.numeroCuenta }}</span>
+                  <UBadge color="neutral" variant="soft" size="sm" class="shrink-0 ml-2">{{ cuenta.tipoMoneda }}
+                  </UBadge>
                 </div>
               </div>
             </div>
           </template>
 
-          <div
-            v-else
+          <div v-else
             class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 cursor-pointer hover:border-primary-500/50 hover:shadow-sm transition-all"
-            @click="openAddAccount"
-          >
-            <div
-              class="flex flex-col items-center justify-center py-8 text-center"
-            >
+            @click="openAddAccount">
+            <div class="flex flex-col items-center justify-center py-8 text-center">
               <div
-                class="size-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-3"
-              >
-                <UIcon
-                  name="i-lucide-plus"
-                  class="size-6 text-neutral-500 dark:text-neutral-400"
-                />
+                class="size-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-3">
+                <UIcon name="i-lucide-plus" class="size-6 text-neutral-500 dark:text-neutral-400" />
               </div>
               <p class="text-sm font-medium text-neutral-900 dark:text-white">
                 Vincular nueva cuenta
@@ -528,82 +443,40 @@ onMounted(() => {
       </div>
     </main>
 
-    <UModal
-      v-model:open="accountModalOpen"
-      :title="
-        editingAccountId ? 'Editar cuenta bancaria' : 'Agregar cuenta bancaria'
-      "
-      :description="
-        editingAccountId
-          ? 'Actualiza los datos de tu cuenta bancaria.'
-          : 'Ingresa los datos de tu cuenta para recibir pagos.'
-      "
-    >
+    <UModal v-model:open="accountModalOpen" :title="editingAccountId ? 'Editar cuenta bancaria' : 'Agregar cuenta bancaria'
+      " :description="editingAccountId
+        ? 'Actualiza los datos de tu cuenta bancaria.'
+        : 'Ingresa los datos de tu cuenta para recibir pagos.'
+        ">
       <template #body>
-        <UForm
-          id="account-form"
-          :schema="accountSchema"
-          :state="accountState"
-          class="space-y-4"
-          @submit="onSubmitAccount"
-        >
+        <UForm id="account-form" :schema="accountSchema" :state="accountState" class="space-y-4"
+          @submit="onSubmitAccount">
           <UFormField name="banco" label="Banco" required>
-            <UInput
-              v-model="accountState.banco"
-              placeholder="Ej: Banco Santander"
-              class="w-full"
-            />
+            <UInput v-model="accountState.banco" placeholder="Ej: Banco Santander" class="w-full" />
           </UFormField>
           <UFormField name="numeroCuenta" label="Número de cuenta" required>
-            <UInput
-              v-model="accountState.numeroCuenta"
-              placeholder="Ej: 1234 5678 9012 3456"
-              class="w-full"
-            />
+            <UInput v-model="accountState.numeroCuenta" placeholder="Ej: 1234 5678 9012 3456" class="w-full" />
           </UFormField>
           <UFormField name="nombreTitular" label="Titular" required>
-            <UInput
-              v-model="accountState.nombreTitular"
-              placeholder="Nombre del titular"
-              class="w-full"
-            />
+            <UInput v-model="accountState.nombreTitular" placeholder="Nombre del titular" class="w-full" />
           </UFormField>
           <UFormField name="tipoMoneda" label="Moneda" required>
-            <USelect
-              v-model="accountState.tipoMoneda"
-              :items="monedas"
-              class="w-full"
-            />
+            <USelect v-model="accountState.tipoMoneda" :items="monedas" class="w-full" />
           </UFormField>
         </UForm>
       </template>
       <template #footer="{ close }">
-        <UButton
-          label="Cancelar"
-          color="neutral"
-          variant="outline"
-          @click="close"
-        />
-        <UButton
-          type="submit"
-          form="account-form"
-          :label="editingAccountId ? 'Guardar cambios' : 'Guardar cuenta'"
-          :loading="savingAccount"
-        />
+        <UButton label="Cancelar" color="neutral" variant="outline" @click="close" />
+        <UButton type="submit" form="account-form" :label="editingAccountId ? 'Guardar cambios' : 'Guardar cuenta'"
+          :loading="savingAccount" />
       </template>
     </UModal>
 
-    <UModal
-      v-model:open="deleteConfirmOpen"
-      title="Eliminar cuenta"
-      description="Esta acción no se puede deshacer. ¿Estás seguro de eliminar esta cuenta bancaria?"
-    >
+    <UModal v-model:open="deleteConfirmOpen" title="Eliminar cuenta"
+      description="Esta acción no se puede deshacer. ¿Estás seguro de eliminar esta cuenta bancaria?">
       <template #body>
         <div class="flex items-center gap-3 p-3 bg-muted rounded-lg">
-          <UIcon
-            name="i-lucide-alert-triangle"
-            class="size-5 text-warning shrink-0"
-          />
+          <UIcon name="i-lucide-alert-triangle" class="size-5 text-warning shrink-0" />
           <div>
             <p class="text-sm font-medium">Se eliminará:</p>
             <p class="text-sm text-muted">{{ deletingAccountLabel }}</p>
@@ -611,74 +484,32 @@ onMounted(() => {
         </div>
       </template>
       <template #footer="{ close }">
-        <UButton
-          label="Cancelar"
-          color="neutral"
-          variant="outline"
-          @click="close"
-        />
-        <UButton
-          label="Eliminar"
-          color="error"
-          icon="i-lucide-trash-2"
-          @click="executeDelete"
-        />
+        <UButton label="Cancelar" color="neutral" variant="outline" @click="close" />
+        <UButton label="Eliminar" color="error" icon="i-lucide-trash-2" @click="executeDelete" />
       </template>
     </UModal>
 
-    <UModal
-      v-model:open="editProfileModalOpen"
-      title="Editar Perfil"
-      description="Actualiza tus datos personales."
-    >
+    <UModal v-model:open="editProfileModalOpen" title="Editar Perfil" description="Actualiza tus datos personales.">
       <template #body>
-        <UForm
-          id="edit-profile-form"
-          :schema="profileSchema"
-          :state="profileState"
-          class="space-y-4"
-          @submit="onSubmitProfile"
-        >
+        <UForm id="edit-profile-form" :schema="profileSchema" :state="profileState" class="space-y-4"
+          @submit="onSubmitProfile">
           <!-- Foto de Perfil Upload -->
           <div class="flex flex-col items-center gap-3 mb-4">
-            <div
-              class="relative group cursor-pointer"
-              @click="triggerFileInput"
-            >
-              <UAvatar
-                :src="tempAvatarUrl || undefined"
-                :alt="profileState.nombres || '?'"
-                :text="profileState.nombres?.charAt(0).toUpperCase() || '?'"
-                size="3xl"
-                class="size-24 rounded-full border-2 border-neutral-200 dark:border-neutral-800"
-              />
+            <div class="relative group cursor-pointer" @click="triggerFileInput">
+              <UAvatar :src="tempAvatarUrl || undefined" :alt="profileState.nombres || '?'"
+                :text="profileState.nombres?.charAt(0).toUpperCase() || '?'" size="3xl"
+                class="size-24 rounded-full border-2 border-neutral-200 dark:border-neutral-800" />
               <div
-                class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
+                class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <UIcon name="i-lucide-camera" class="size-6 text-white" />
               </div>
             </div>
             <div v-if="tempAvatarUrl" class="flex justify-center">
-              <UButton
-                type="button"
-                label="Eliminar foto"
-                size="xs"
-                color="error"
-                variant="ghost"
-                icon="i-lucide-trash-2"
-                @click="removeTempAvatar"
-              />
+              <UButton type="button" label="Eliminar foto" size="xs" color="error" variant="ghost"
+                icon="i-lucide-trash-2" @click="removeTempAvatar" />
             </div>
-            <input
-              ref="fileInput"
-              type="file"
-              class="hidden"
-              accept="image/png, image/jpeg"
-              @change="onFileChange"
-            />
-            <span class="text-[10px] text-neutral-400 dark:text-neutral-500"
-              >JPG o PNG, máx 5MB</span
-            >
+            <input ref="fileInput" type="file" class="hidden" accept="image/png, image/jpeg" @change="onFileChange">
+            <span class="text-[10px] text-neutral-400 dark:text-neutral-500">JPG o PNG, máx 5MB</span>
           </div>
 
           <UFormField name="nombres" label="Nombre(s)" required>
@@ -690,18 +521,8 @@ onMounted(() => {
         </UForm>
       </template>
       <template #footer="{ close }">
-        <UButton
-          label="Cancelar"
-          color="neutral"
-          variant="outline"
-          @click="close"
-        />
-        <UButton
-          type="submit"
-          form="edit-profile-form"
-          label="Guardar"
-          :loading="savingProfile"
-        />
+        <UButton label="Cancelar" color="neutral" variant="outline" @click="close" />
+        <UButton type="submit" form="edit-profile-form" label="Guardar" :loading="savingProfile" />
       </template>
     </UModal>
   </div>

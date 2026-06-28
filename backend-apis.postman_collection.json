@@ -205,21 +205,23 @@
 					"name": "Actualizar Perfil",
 					"request": {
 						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"nombres\": \"Juan Modificado\",\n  \"telefono\": \"+51987654321\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "nombres",
+									"value": "Juan Modificado",
+									"type": "text",
+									"description": "Nombre completo a actualizar"
+								},
+								{
+									"key": "fotoPerfil",
+									"type": "file",
+									"src": [],
+									"description": "Nueva imagen de perfil (opcional, <= 5MB)"
 								}
-							}
+							]
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/users/profile",
@@ -232,7 +234,7 @@
 								"profile"
 							]
 						},
-						"description": "Actualiza el nombre y teléfono del perfil del usuario autenticado."
+						"description": "Actualiza el perfil del usuario autenticado (nombre y foto de perfil) usando FormData."
 					},
 					"response": []
 				},
@@ -374,7 +376,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"metodoPagoId\": 1,\n  \"tipoOperacion\": \"Venta\",\n  \"moneda\": \"USD\",\n  \"montoTotal\": 500.00,\n  \"montoMinimo\": 50.00,\n  \"montoMaximo\": 500.00,\n  \"tipoCambio\": 3.75\n}",
+							"raw": "{\n  \"metodoPagoId\": 1,\n  \"tipoOperacion\": \"Venta\",\n  \"monedaTengo\": \"USD\",\n  \"monedaRecibo\": \"PEN\",\n  \"cantidad\": 500.00\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -391,7 +393,7 @@
 								"ofertas"
 							]
 						},
-						"description": "Crea y publica una nueva oferta de compra o venta de moneda."
+						"description": "Crea y publica una nueva oferta de compra o venta de moneda. El backend calcula el tipo de cambio y montos cruzados usando API externa."
 					},
 					"response": []
 				},
@@ -416,7 +418,7 @@
 								{
 									"key": "moneda",
 									"value": "USD",
-									"description": "Filtro opcional por moneda"
+									"description": "Filtro opcional por moneda (monedaTengo o monedaRecibo)"
 								},
 								{
 									"key": "tipoOperacion",
@@ -426,7 +428,7 @@
 								{
 									"key": "monto",
 									"value": "100",
-									"description": "Filtro opcional por monto (debe caer en el rango de la oferta)"
+									"description": "Filtro opcional por monto"
 								},
 								{
 									"key": "page",
@@ -440,7 +442,104 @@
 								}
 							]
 						},
-						"description": "Lista de forma pública (no requiere token) todas las ofertas activas filtradas por parámetros."
+						"description": "Lista de forma pública (no requiere token) todas las ofertas activas y en proceso filtradas por parámetros."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Ofertas del Marketplace",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/ofertas/marketplace?moneda=USD&tipoOperacion=Venta&monto=100&page=1&pageSize=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ofertas",
+								"marketplace"
+							],
+							"query": [
+								{
+									"key": "moneda",
+									"value": "USD",
+									"description": "Filtro opcional por moneda"
+								},
+								{
+									"key": "tipoOperacion",
+									"value": "Venta",
+									"description": "Filtro opcional por tipo de operación"
+								},
+								{
+									"key": "monto",
+									"value": "100",
+									"description": "Filtro opcional por monto"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Número de página"
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Tamaño de página"
+								}
+							]
+						},
+						"description": "Lista las ofertas activas en el mercado creadas por otros usuarios (excluye las del usuario autenticado)."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Ofertas de Usuario",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/ofertas/usuario",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ofertas",
+								"usuario"
+							]
+						},
+						"description": "Lista todas las ofertas activas o en proceso del propio usuario autenticado."
+					},
+					"response": []
+				},
+				{
+					"name": "Ver Detalle de Oferta",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/ofertas/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"ofertas",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID de la oferta"
+								}
+							]
+						},
+						"description": "Muestra los detalles completos de una oferta por su ID."
 					},
 					"response": []
 				},
@@ -450,7 +549,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/ofertas/matches?moneda=USD&tipoOperacion=Compra&monto=150&tipoCambio=3.76",
+							"raw": "{{baseUrl}}/api/ofertas/matches?ofertaId=1",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -461,28 +560,13 @@
 							],
 							"query": [
 								{
-									"key": "moneda",
-									"value": "USD",
-									"description": "Moneda de la transacción"
-								},
-								{
-									"key": "tipoOperacion",
-									"value": "Compra",
-									"description": "Tipo de operación que el usuario desea realizar (Compra o Venta)"
-								},
-								{
-									"key": "monto",
-									"value": "150",
-									"description": "Monto de la transacción"
-								},
-								{
-									"key": "tipoCambio",
-									"value": "3.76",
-									"description": "Tipo de cambio deseado"
+									"key": "ofertaId",
+									"value": "1",
+									"description": "ID de la oferta del usuario para la cual buscar coincidencias compatibles de otros usuarios."
 								}
 							]
 						},
-						"description": "Busca ofertas compatibles (que correspondan a la operación contraria de otros usuarios) que coincidan en moneda, monto y tipo de cambio favorable."
+						"description": "Busca ofertas de otros usuarios que coincidan con la oferta especificada para poder realizar matching directo."
 					},
 					"response": []
 				},
@@ -499,7 +583,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"monto_total\": 600.00,\n  \"monto_minimo\": 60.00,\n  \"monto_maximo\": 600.00,\n  \"tipo_cambio\": 3.78\n}",
+							"raw": "{\n  \"cantidad\": 600.00\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -524,7 +608,7 @@
 								}
 							]
 						},
-						"description": "Modifica los montos y el tipo de cambio de una oferta propia activa."
+						"description": "Modifica la cantidad de una oferta propia activa (el backend recalcula montos y tipo de cambio vigente)."
 					},
 					"response": []
 				},
@@ -551,7 +635,7 @@
 								}
 							]
 						},
-						"description": "Cancela (desactiva) una oferta propia."
+						"description": "Cancela (desactiva/elimina) una oferta propia."
 					},
 					"response": []
 				}
@@ -573,7 +657,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"ofertaId\": 1,\n  \"montoOperacion\": 100.00\n}",
+							"raw": "{\n  \"ofertaId\": 1,\n  \"metodoPagoParticipanteId\": 2\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -590,7 +674,7 @@
 								"transacciones"
 							]
 						},
-						"description": "Inicia una transacción a partir de una oferta activa de otro usuario."
+						"description": "Inicia una transacción a partir de una oferta activa de otro usuario especificando la cuenta de recepción (en la moneda que recibirá)."
 					},
 					"response": []
 				},
@@ -710,7 +794,7 @@
 								}
 							]
 						},
-						"description": "Confirma la recepción del dinero por parte del vendedor, finalizando la transacción."
+						"description": "Confirma la recepción del dinero por parte de un participante. Cuando ambos confirman, la transacción se finaliza automáticamente."
 					},
 					"response": []
 				},
@@ -738,7 +822,7 @@
 								}
 							]
 						},
-						"description": "Abre una disputa sobre la transacción (válido sólo si el estado actual es 'Pagado')."
+						"description": "Abre una disputa sobre la transacción (válido antes de confirmar la recepción correcta)."
 					},
 					"response": []
 				},
@@ -777,7 +861,52 @@
 								}
 							]
 						},
-						"description": "Sube el voucher de pago en formato JPEG o PNG (máximo 5MB) para actualizar el estado de la transacción a 'Pagado'."
+						"description": "Sube el voucher de pago en formato JPEG o PNG (máximo 5MB)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tipo de Cambio",
+			"item": [
+				{
+					"name": "Convertir Moneda",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tipo-cambio/convert?from=USD&to=PEN&amount=100",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"tipo-cambio",
+								"convert"
+							],
+							"query": [
+								{
+									"key": "from",
+									"value": "USD",
+									"description": "Moneda origen"
+								},
+								{
+									"key": "to",
+									"value": "PEN",
+									"description": "Moneda destino"
+								},
+								{
+									"key": "amount",
+									"value": "100",
+									"description": "Monto a convertir"
+								}
+							]
+						},
+						"description": "Obtiene la tasa de cambio actual y convierte un monto entre dos monedas."
 					},
 					"response": []
 				}
@@ -965,7 +1094,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"estado\": \"Suspendido\"\n}",
+							"raw": "{\n  \"estado\": \"Bloqueado\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -992,7 +1121,51 @@
 								}
 							]
 						},
-						"description": "Permite cambiar el estado de un usuario a 'Suspendido' o 'Bloqueado' (requiere rol Administrador)."
+						"description": "Permite cambiar el estado de un usuario a 'Activo', 'Suspendido' o 'Bloqueado' (requiere rol Administrador)."
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Verificación de Usuario",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"esVerificado\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/users/:id/verify",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users",
+								":id",
+								"verify"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "ID del usuario"
+								}
+							]
+						},
+						"description": "Permite cambiar el estado de verificación manual de un usuario a verificado (true) o desverificado (false) (requiere rol Administrador)."
 					},
 					"response": []
 				},
