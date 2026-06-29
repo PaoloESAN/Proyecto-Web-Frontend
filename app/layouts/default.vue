@@ -16,20 +16,14 @@ function getItems(_state: "collapsed" | "expanded") {
       to: "/marketplace",
     },
     {
-      label: "Ofertas",
-      icon: "i-lucide-tag",
-      children: [
-        {
-          label: "Mis transacciones",
-          icon: "i-lucide-inbox",
-          to: "/my-transactions",
-        },
-        {
-          label: "Mis ofertas",
-          icon: "i-lucide-send",
-          to: "/my-offers",
-        },
-      ],
+      label: "Mis transacciones",
+      icon: "i-lucide-inbox",
+      to: "/my-transactions",
+    },
+    {
+      label: "Mis ofertas",
+      icon: "i-lucide-send",
+      to: "/my-offers",
     },
     {
       label: "Historial",
@@ -61,13 +55,13 @@ async function handleLogout() {
 }
 
 function handleBack() {
-  if (import.meta.client && window.history.length > 1) {
-    router.back();
+  if (route.meta.back) {
+    navigateTo(route.meta.back as string);
     return;
   }
 
-  if (route.meta.back) {
-    navigateTo(route.meta.back as string);
+  if (import.meta.client && window.history.length > 1) {
+    router.back();
     return;
   }
 
@@ -162,9 +156,8 @@ const userItems = computed<DropdownMenuItem[][]>(() => {
     }">
       <!-- Slot #header: Brand logo -->
       <template #header>
-        <div class="flex items-center gap-3 w-full overflow-hidden">
-          <div
-            class="size-10 rounded-xl border border-default bg-white dark:bg-neutral-900 shrink-0 p-1.5 flex items-center justify-center">
+        <div class="flex items-center w-full overflow-hidden" :class="[open ? 'gap-3' : 'justify-start']">
+          <div class="size-10 shrink-0 p-1.5 flex items-center justify-center">
             <img src="/logo.svg" alt="interYa" class="size-full object-contain">
           </div>
           <div v-if="open" class="min-w-0 flex-1">
@@ -213,21 +206,19 @@ const userItems = computed<DropdownMenuItem[][]>(() => {
       <template #footer>
         <UDropdownMenu :items="userItems" :content="{ align: 'center', collisionPadding: 12 }"
           :ui="{ content: 'w-(--reka-dropdown-menu-trigger-width) min-w-48' }" class="w-full">
-          <UButton :label="open
+          <UButton :avatar="{
+            src: authStore.avatarUrl || undefined,
+            alt: authStore.usuario?.nombres || '?',
+            text: authStore.usuario?.nombres?.charAt(0).toUpperCase() || '?'
+          }" :label="open
             ? authStore.usuario?.nombres
               ? `${authStore.usuario.nombres} ${authStore.usuario.apellidos}`
               : 'Usuario'
             : undefined
-            " trailing-icon="i-lucide-chevrons-up-down" color="neutral" variant="ghost" square
+            " :trailing-icon="open ? 'i-lucide-chevrons-up-down' : undefined" color="neutral" variant="ghost" square
             class="w-full data-[state=open]:bg-elevated overflow-hidden cursor-pointer" :ui="{
               trailingIcon: 'text-dimmed ms-auto',
-            }">
-            <template #leading>
-              <UAvatar :src="authStore.avatarUrl || undefined" :alt="authStore.usuario?.nombres || '?'"
-                :text="authStore.usuario?.nombres?.charAt(0).toUpperCase() || '?'" size="sm"
-                class="bg-primary/10 text-primary font-bold shrink-0" />
-            </template>
-          </UButton>
+            }" />
         </UDropdownMenu>
       </template>
     </USidebar>
