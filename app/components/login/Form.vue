@@ -51,10 +51,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   }
 }
 
-function quickLogin(correo: string, contrasena: string) {
-  state.correo = correo;
-  state.password = contrasena;
-}
 </script>
 
 <template>
@@ -135,38 +131,6 @@ function quickLogin(correo: string, contrasena: string) {
       />
     </UForm>
 
-    <!-- Botones de Acceso Rápido para Pruebas -->
-    <div class="mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800 space-y-3">
-      <p class="text-center text-[10px] font-bold tracking-wider uppercase text-neutral-400 dark:text-neutral-500">
-        Acceso Rápido (Pruebas)
-      </p>
-      <div class="grid grid-cols-3 gap-2">
-        <UButton
-          label="Usuario 1"
-          variant="outline"
-          color="neutral"
-          size="xs"
-          class="justify-center text-[11px]"
-          @click="quickLogin('julioprofe@email.com', '123456')"
-        />
-        <UButton
-          label="Usuario 2"
-          variant="outline"
-          color="neutral"
-          size="xs"
-          class="justify-center text-[11px]"
-          @click="quickLogin('juanjose@email.com', '123456')"
-        />
-        <UButton
-          label="Admin"
-          variant="outline"
-          color="neutral"
-          size="xs"
-          class="justify-center text-[11px]"
-          @click="quickLogin('admin@exchange.com', 'admin123')"
-        />
-      </div>
-    </div>
 
     <template #footer>
       <p class="text-center text-sm text-neutral-500 dark:text-neutral-400">
