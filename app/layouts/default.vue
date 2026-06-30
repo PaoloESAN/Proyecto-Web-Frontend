@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import type { DropdownMenuItem, NavigationMenuItem } from "@nuxt/ui";
 
 const authStore = useAuthStore();
@@ -7,6 +7,16 @@ const open = ref(true);
 const colorMode = useColorMode();
 const route = useRoute();
 const router = useRouter();
+
+// Close sidebar on mobile when navigating to another page
+watch(() => route.path, () => {
+  if (import.meta.client) {
+    const isMobile = !window.matchMedia('(min-width: 1024px)').matches;
+    if (isMobile) {
+      open.value = false;
+    }
+  }
+});
 // Definición de links principales
 function getItems(_state: "collapsed" | "expanded") {
   const links = [
@@ -154,21 +164,26 @@ const userItems = computed<DropdownMenuItem[][]>(() => {
       inner: 'bg-elevated/55 backdrop-blur-sm divide-transparent border-r border-default/50',
       body: 'py-1',
     }">
-      <!-- Slot #header: Brand logo -->
+      <!-- Slot #header: Brand logo and close button for mobile -->
       <template #header>
-        <div class="flex items-center w-full overflow-hidden" :class="[open ? 'gap-3' : 'justify-start']">
-          <div class="size-10 shrink-0 p-1.5 flex items-center justify-center">
-            <img src="/logo.svg" alt="interYa" class="size-full object-contain">
+        <div class="flex items-center justify-between w-full overflow-hidden">
+          <div class="flex items-center" :class="[open ? 'gap-3' : 'justify-start']">
+            <div class="size-10 shrink-0 p-1.5 flex items-center justify-center">
+              <img src="/logo.svg" alt="interYa" class="size-full object-contain">
+            </div>
+            <div v-if="open" class="min-w-0 flex-1">
+              <span
+                class="text-base tracking-tight text-neutral-900 dark:text-white block truncate font-semibold font-[Inter,sans-serif]">
+                inter<span class="text-primary">Ya</span>
+              </span>
+              <span class="block text-[9px] text-neutral-500 font-bold uppercase tracking-wider leading-none mt-0.5">
+                Intercambio de divisas
+              </span>
+            </div>
           </div>
-          <div v-if="open" class="min-w-0 flex-1">
-            <span
-              class="text-base tracking-tight text-neutral-900 dark:text-white block truncate font-semibold font-[Inter,sans-serif]">
-              inter<span class="text-primary">Ya</span>
-            </span>
-            <span class="block text-[9px] text-neutral-500 font-bold uppercase tracking-wider leading-none mt-0.5">
-              Intercambio de divisas
-            </span>
-          </div>
+          <!-- Close button for mobile / smaller screens -->
+          <UButton v-if="open" icon="i-lucide-x" color="neutral" variant="ghost"
+            class="lg:hidden cursor-pointer shrink-0" aria-label="Cerrar menú" @click="open = false" />
         </div>
       </template>
 

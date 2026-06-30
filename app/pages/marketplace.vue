@@ -38,6 +38,7 @@ const matchingOfferId = ref(0);
 const ofertasMatches = ref<MatchesResponse>([]);
 const mostrarSoloMatches = ref(false);
 const loadingMatches = ref(false);
+const isFiltersOpen = ref(false);
 
 const currencyOptions = computed(() => [
   { label: "Todas", value: ALL },
@@ -218,32 +219,76 @@ onMounted(() => {
 
 <template>
   <div class="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
-    <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid lg:grid-cols-[310px_1fr] gap-6">
-      <MarketplaceFilters
-        v-model:tipo-operacion="tipoOperacion"
-        v-model:moneda-origen="monedaOrigen"
-        v-model:moneda-destino="monedaDestino"
-        v-model:moneda-monto-recibe="monedaMontoRecibe"
-        v-model:monto-recibe-min="montoRecibeMin"
-        v-model:monto-recibe-max="montoRecibeMax"
-        v-model:calificacion-min="calificacionMin"
-        v-model:ordenar-por="ordenarPor"
-        v-model:matching-offer-id="matchingOfferId"
-        :currency-options="currencyOptions"
-        :ordenar-options="ordenarOptions"
-        :mis-ofertas-options="misOfertasOptions"
-        :loading-matches="loadingMatches"
-        :moneda-monto-label="monedaMontoLabel"
-        @limpiar="limpiarFiltros"
-      />
+    <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Header bar for mobile (shows "Filtros" button) -->
+      <div class="lg:hidden mb-6 flex items-center justify-between">
+        <h2 class="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
+          Marketplace
+        </h2>
+        <UButton
+          label="Filtros"
+          icon="i-lucide-sliders-horizontal"
+          color="neutral"
+          variant="outline"
+          class="cursor-pointer font-medium"
+          @click="isFiltersOpen = true"
+        />
+      </div>
 
-      <MarketplaceOffersList
-        v-model:page="page"
-        :ofertas-paginadas="ofertasPaginadas"
-        :total-ofertas="ofertasOrdenadas.length"
-        :loading="loading"
-        :page-size="pageSize"
-      />
+      <div class="grid lg:grid-cols-[310px_1fr] gap-6">
+        <!-- Desktop Filters sidebar -->
+        <MarketplaceFilters
+          v-model:tipo-operacion="tipoOperacion"
+          v-model:moneda-origen="monedaOrigen"
+          v-model:moneda-destino="monedaDestino"
+          v-model:moneda-monto-recibe="monedaMontoRecibe"
+          v-model:monto-recibe-min="montoRecibeMin"
+          v-model:monto-recibe-max="montoRecibeMax"
+          v-model:calificacion-min="calificacionMin"
+          v-model:ordenar-por="ordenarPor"
+          v-model:matching-offer-id="matchingOfferId"
+          class="hidden lg:block"
+          :currency-options="currencyOptions"
+          :ordenar-options="ordenarOptions"
+          :mis-ofertas-options="misOfertasOptions"
+          :loading-matches="loadingMatches"
+          :moneda-monto-label="monedaMontoLabel"
+          @limpiar="limpiarFiltros"
+        />
+
+        <MarketplaceOffersList
+          v-model:page="page"
+          :ofertas-paginadas="ofertasPaginadas"
+          :total-ofertas="ofertasOrdenadas.length"
+          :loading="loading"
+          :page-size="pageSize"
+        />
+      </div>
     </div>
+
+    <!-- Bottom Drawer for Mobile Filters -->
+    <UDrawer v-model:open="isFiltersOpen" title="Filtros del Marketplace" class="lg:hidden">
+      <template #body>
+        <div class="p-6 overflow-y-auto max-h-[75vh]">
+          <MarketplaceFilters
+            v-model:tipo-operacion="tipoOperacion"
+            v-model:moneda-origen="monedaOrigen"
+            v-model:moneda-destino="monedaDestino"
+            v-model:moneda-monto-recibe="monedaMontoRecibe"
+            v-model:monto-recibe-min="montoRecibeMin"
+            v-model:monto-recibe-max="montoRecibeMax"
+            v-model:calificacion-min="calificacionMin"
+            v-model:ordenar-por="ordenarPor"
+            v-model:matching-offer-id="matchingOfferId"
+            :currency-options="currencyOptions"
+            :ordenar-options="ordenarOptions"
+            :mis-ofertas-options="misOfertasOptions"
+            :loading-matches="loadingMatches"
+            :moneda-monto-label="monedaMontoLabel"
+            @limpiar="limpiarFiltros"
+          />
+        </div>
+      </template>
+    </UDrawer>
   </div>
 </template>

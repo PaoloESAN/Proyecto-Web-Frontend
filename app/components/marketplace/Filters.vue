@@ -25,7 +25,7 @@ const ALL = "ALL";
 </script>
 
 <template>
-  <aside class="bg-white dark:bg-neutral-900 border border-default rounded-xl p-4 space-y-5 h-fit lg:mt-10">
+  <aside class="bg-transparent lg:bg-white lg:dark:bg-neutral-900 border-0 lg:border lg:border-default rounded-none lg:rounded-xl p-0 lg:p-4 space-y-5 h-fit lg:mt-10">
     <div class="flex items-center justify-between">
       <p class="text-xs uppercase text-neutral-400 font-semibold">Filtros</p>
       <UButton
