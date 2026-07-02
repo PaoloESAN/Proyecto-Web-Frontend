@@ -47,7 +47,7 @@ Para el desarrollo y mantenimiento del frontend, el agente debe dominar y aplica
 
 - **Rol Intermediario P2P (Sin Custodia de Fondos)**: La aplicación no almacena, recibe ni custodia dinero. Las transferencias bancarias se realizan de forma externa y directa entre los usuarios de banco a banco (P2P). La app actúa únicamente como facilitador para mostrar la información bancaria de destino/recepción y los comprobantes de pago correspondientes.
 - **Modelo Actual de Oferta (Monto Único por Conversión)**: La oferta se define por `tipoOperacion`, `monedaTengo`, `monedaRecibo`, `cantidad` y `metodoPagoId` (cuenta en `monedaTengo`). El backend calcula automáticamente `tipoCambio`, `montoTengo` y `montoRecibo` usando API externa de tipo de cambio. Ya no se ingresan manualmente `montoMinimo`, `montoMaximo` ni `tipoCambio`.
-- **Seguridad Transaccional**: El flujo de intercambio bloquea la edición/cancelación. Si una oferta tiene transacciones en estado `Pendiente`, `Pagado` o `Disputa`, no puede ser modificada (`PUT`) ni cancelada/eliminada (`DELETE`).
+- **Seguridad Transaccional**: El flujo de intercambio bloquea la edición/cancelación. Si una oferta tiene transacciones en estado `Pendiente`, `En Proceso` o `Disputa`, no puede ser modificada (`PUT`) ni cancelada/eliminar (`DELETE`).
 - **Flujo de Ofertas y Gestión ("Mis Ofertas")**:
   - Cada oferta en estado `"En Proceso"` se asocia con a lo más una transacción/solicitud activa (el emparejamiento es directo de 1 a 1).
   - En la lista de ofertas del usuario (`MyOffersScreen`), se muestran únicamente las ofertas con estado `"Activa"` y `"En Proceso"`.
@@ -55,7 +55,7 @@ Para el desarrollo y mantenimiento del frontend, el agente debe dominar y aplica
   - La edición actualiza únicamente `cantidad`; el backend recalcula montos y tipo de cambio vigente.
 - **Ciclo de Transacciones (Doble Confirmación)**:
   1. `Pendiente`: El participante inicia la transacción sin ingresar monto manual (se usa el monto fijo de la oferta), seleccionando su cuenta de recepción en `monedaRecibo`. Ambos participantes ven sus cuentas cruzadas.
-  2. `Pagado` / `Confirmación Parcial`: Ambos participantes deben realizar sus transferencias cruzadas y subir sus respectivos comprobantes de pago (`POST /api/transacciones/:id/voucher`).
+  2. `En Proceso` / `Confirmación Parcial`: Ambos participantes deben realizar sus transferencias cruzadas y subir sus respectivos comprobantes de pago (`POST /api/transacciones/:id/voucher`).
   3. `Finalizado` o `Disputa`: Ambos participantes deben verificar el comprobante de la contraparte y presionar "Confirmar Pago Correcto" (`POST /api/transacciones/:id/confirm`). Solo cuando ambos confirman (`confirmadoComprador == true` y `confirmadoVendedor == true`), la transacción pasa a estado `Finalizado`. Cualquiera de las partes puede abrir un conflicto (`Disputa`) antes de confirmar.
 - **Resolución de Disputas**: Exclusivo para administradores. La resolución es binaria en cuanto al estado informativo de la transacción dentro del sistema:
   - **A favor del comprador**: La transacción se cambia a estado `Cancelado` y la oferta vuelve a estar `Activa` (disponible para recibir solicitudes de intercambio).
@@ -212,6 +212,7 @@ export interface ErrorResponse {
 - **Requiere Auth** (Multipart/Form-Data)
 - **Request Body** (FormData):
   - `nombres`: string (Requerido, máx 100)
+  - `apellidos`: string (Requerido, máx 100)
   - `fotoPerfil`?: File (Opcional, imagen <= 5MB)
 - **Respuestas**:
   - `200 OK`:
@@ -625,7 +626,7 @@ export interface ErrorResponse {
 
 - **Requiere Auth**
 - **Query Parameters**:
-  - `estado`?: "Pendiente" | "Pagado" | "Finalizado" | "Disputa" | "Cancelado"
+  - `estado`?: "Pendiente" | "En Proceso" | "Finalizado" | "Disputa" | "Cancelado"
   - `page`?: number (Default: 1)
   - `pageSize`?: number (Default: 10)
 - **Respuestas**:
@@ -674,7 +675,7 @@ export interface ErrorResponse {
       montoTengo: number;
       montoRecibo: number;
       tipoCambioAplicado: number;
-      estado: string; // "Pendiente" | "Pagado" | "Finalizado" | "Disputa" | "Cancelado"
+      estado: string; // "Pendiente" | "En Proceso" | "Finalizado" | "Disputa" | "Cancelado"
       fechaInicio: string;
       fechaActualizacion: string;
       comprador: {
@@ -740,7 +741,7 @@ export interface ErrorResponse {
     export interface ConfirmReceiptResponse {
       mensaje: string; // "Confirmación registrada exitosamente..."
       transaccionId: number;
-      estado: string; // "Pendiente" | "Pagado" | "Finalizado"
+      estado: string; // "Pendiente" | "En Proceso" | "Finalizado"
       confirmadoComprador: boolean;
       confirmadoVendedor: boolean;
       fechaActualizacion: string;
@@ -777,7 +778,7 @@ export interface ErrorResponse {
     export interface UploadVoucherResponse {
       mensaje: string; // "Voucher subido exitosamente..."
       urlVoucher: string;
-      estado: "Pagado";
+      estado: "En Proceso";
     }
     ```
   - `400 Bad Request` / `401 Unauthorized` / `403 Forbidden` / `404 Not Found` / `500 Internal Server Error`.

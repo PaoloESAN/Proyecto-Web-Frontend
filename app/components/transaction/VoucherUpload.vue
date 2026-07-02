@@ -65,7 +65,7 @@ async function uploadVoucher() {
 
     toast.add({
       title: "Voucher subido",
-      description: "El comprobante de pago fue subido y la transacción pasó a estado 'Pagado'.",
+      description: "El comprobante de pago fue subido y la transacción pasó a estado 'En Proceso'.",
       color: "success",
       icon: "i-lucide-check-circle",
     });

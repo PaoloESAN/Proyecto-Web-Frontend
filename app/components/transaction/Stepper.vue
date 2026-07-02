@@ -18,13 +18,13 @@ const props = defineProps<{
             props.estado === 'Pendiente'
               ? 'bg-amber-500/10 text-amber-500 border-amber-500'
               : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 border-transparent',
-            ['Pagado', 'Finalizado', 'Disputa'].includes(props.estado)
+            ['En Proceso', 'Finalizado', 'Disputa'].includes(props.estado)
               ? 'bg-emerald-500 text-white border-transparent'
               : '',
           ]"
         >
           <UIcon
-            v-if="['Pagado', 'Finalizado', 'Disputa'].includes(props.estado)"
+            v-if="['En Proceso', 'Finalizado', 'Disputa'].includes(props.estado)"
             name="i-lucide-check"
             class="size-4"
           />
@@ -43,7 +43,7 @@ const props = defineProps<{
         <div
           class="size-8 rounded-full flex items-center justify-center font-bold text-xs border transition-colors"
           :class="[
-            props.estado === 'Pagado'
+            props.estado === 'En Proceso'
               ? 'bg-primary/10 text-primary border-primary'
               : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 border-transparent',
             props.estado === 'Finalizado' ? 'bg-emerald-500 text-white border-transparent' : '',
@@ -56,7 +56,7 @@ const props = defineProps<{
         </div>
         <span
           class="text-xs font-bold"
-          :class="props.estado === 'Pagado' ? 'text-primary' : 'text-neutral-400'"
+          :class="props.estado === 'En Proceso' ? 'text-primary' : 'text-neutral-400'"
         >
           {{ props.estado === 'Disputa' ? 'Disputa' : 'Verificando' }}
         </span>

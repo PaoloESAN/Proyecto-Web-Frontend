@@ -13,7 +13,7 @@ const badgeColor = computed(() => {
   switch (props.estado) {
     case "Pendiente":
       return "warning";
-    case "Pagado":
+    case "En Proceso":
       return "info";
     case "Finalizado":
       return "success";
@@ -28,7 +28,7 @@ const badgeIcon = computed(() => {
   switch (props.estado) {
     case "Pendiente":
       return "i-lucide-clock";
-    case "Pagado":
+    case "En Proceso":
       return "i-lucide-wallet";
     case "Finalizado":
       return "i-lucide-check-circle-2";

@@ -291,7 +291,7 @@ const canUploadVoucher = computed(() => {
   if (myVoucher.value !== null) return false;
   return (
     transaction.value.estado === "Pendiente" ||
-    transaction.value.estado === "Pagado"
+    transaction.value.estado === "En Proceso"
   );
 });
 
@@ -345,8 +345,8 @@ onMounted(() => {
 
           <!-- Flujo según estado -->
           <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm space-y-6">
-            <!-- CASO: ESTADO PENDIENTE O PAGADO -->
-            <div v-if="transaction.estado === 'Pendiente' || transaction.estado === 'Pagado'" class="space-y-6">
+            <!-- CASO: ESTADO PENDIENTE O EN PROCESO -->
+            <div v-if="transaction.estado === 'Pendiente' || transaction.estado === 'En Proceso'" class="space-y-6">
               <TransactionInstructions
                 :exact-amount-to-send="exactAmountToSend"
                 :exact-amount-to-receive="exactAmountToReceive"

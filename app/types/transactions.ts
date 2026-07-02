@@ -142,5 +142,5 @@ export interface OpenDisputeResponse {
 export interface UploadVoucherResponse {
   mensaje: string;
   urlVoucher: string;
-  estado: "Pagado";
+  estado: "En Proceso";
 }
